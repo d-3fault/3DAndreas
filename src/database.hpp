@@ -1,0 +1,181 @@
+#pragma once
+
+#include <cstddef>
+#include <cstdint>
+#include <string>
+#include <unordered_map>
+#include <vector>
+
+namespace physics {
+
+/**
+ * @brief      Steps of a collision vertex in a metre. The game stores vertices as 16 bit integers in
+ *             steps of 1/128 metre, and so does the database.
+ */
+constexpr float VertexScale = 128.0f;
+
+/**
+ * @brief      The model is a dynamic object of object.dat, such as a bin or a lamp post that can be
+ *             knocked over in the game.
+ */
+constexpr uint8_t ModelDynamic = 1;
+
+/**
+ * @brief      A surface material of the game, one line of surfinfo.dat, numbered by its line.
+ *
+ * `flags` holds a bit for each of the 29 columns from SOFTLAND to CLIMBABLE that is not zero, in
+ * the order of the file.
+ */
+struct Surface {
+	std::string name;
+	std::string group;
+	float tyreGrip = 1.0f;
+	float wetGrip = 0.0f;
+	uint32_t flags = 0;
+};
+
+struct Sphere {
+	float x = 0.0f;
+	float y = 0.0f;
+	float z = 0.0f;
+	float radius = 0.0f;
+	uint8_t material = 0;
+};
+
+struct Box {
+	float minX = 0.0f;
+	float minY = 0.0f;
+	float minZ = 0.0f;
+	float maxX = 0.0f;
+	float maxY = 0.0f;
+	float maxZ = 0.0f;
+	uint8_t material = 0;
+};
+
+struct Vertex {
+	int16_t x = 0;
+	int16_t y = 0;
+	int16_t z = 0;
+};
+
+struct Face {
+	uint16_t a = 0;
+	uint16_t b = 0;
+	uint16_t c = 0;
+	uint8_t material = 0;
+};
+
+/**
+ * @brief      The box and the sphere that hold a model.
+ */
+struct Bounds {
+	float minX = 0.0f;
+	float minY = 0.0f;
+	float minZ = 0.0f;
+	float maxX = 0.0f;
+	float maxY = 0.0f;
+	float maxZ = 0.0f;
+	float centreX = 0.0f;
+	float centreY = 0.0f;
+	float centreZ = 0.0f;
+	float radius = 0.0f;
+};
+
+/**
+ * @brief      How the game moves a dynamic object, one line of object.dat.
+ */
+struct Dynamics {
+	float mass = 0.0f;
+	float turnMass = 0.0f;
+	float airResistance = 0.0f;
+	float elasticity = 0.0f;
+	float percentSubmerged = 0.0f;
+	float uprootLimit = 0.0f;
+	float damageMultiplier = 0.0f;
+	uint8_t damageEffect = 0;
+	uint8_t specialResponse = 0;
+	uint8_t cameraAvoid = 0;
+	uint8_t explosion = 0;
+};
+
+/**
+ * @brief      The collision of a model, and for a dynamic object how the game moves it.
+ */
+struct Model {
+	uint8_t flags = 0;
+	Bounds bounds;
+	Dynamics dynamics;
+	std::vector<Sphere> spheres;
+	std::vector<Box> boxes;
+	std::vector<Vertex> vertices;
+	std::vector<Face> faces;
+};
+
+/**
+ * @brief      A map object placed by the game, with the interior and the rotation of its IPL file.
+ */
+struct Placement {
+	int modelid = 0;
+	int interior = 0;
+	float x = 0.0f;
+	float y = 0.0f;
+	float z = 0.0f;
+	float qx = 0.0f;
+	float qy = 0.0f;
+	float qz = 0.0f;
+	float qw = 1.0f;
+};
+
+/**
+ * @brief      A water polygon of water.dat: a triangle, or a quad given as its four corners.
+ */
+struct Water {
+	int corners = 4;
+	float x[4] = {};
+	float y[4] = {};
+	float z[4] = {};
+};
+
+/**
+ * @brief      Everything a database holds. `colAndreas` tells that it was read from a ColAndreas
+ *             database.
+ */
+struct Database {
+	bool colAndreas = false;
+	std::vector<Surface> surfaces;
+	std::unordered_map<int, Model> models;
+	std::vector<Placement> placements;
+	std::vector<Water> waters;
+};
+
+/**
+ * @brief      Read a database of this component, or a ColAndreas database, which has no materials,
+ *             bounds, interiors or water.
+ *
+ * @return     - `true` the database was read
+ *             - `false` the file is missing, truncated or of an unknown kind
+ */
+bool readDatabase(const std::string& path, Database& database);
+
+/**
+ * @brief      Write a database of this component.
+ *
+ * @return     - `true` the file was written
+ *             - `false` it could not be opened
+ */
+bool writeDatabase(const std::string& path, const Database& database);
+
+/**
+ * @brief      Work out the bounds of a model from its spheres, boxes and vertices.
+ */
+Bounds measureModel(const Model& model);
+
+/**
+ * @brief      Weld the vertices of a model that lie at the same place, drop faces without area and
+ *             faces given twice, and drop the vertices no face uses.
+ *
+ * @return     the number of faces dropped
+ */
+size_t cleanModel(Model& model);
+
+}
