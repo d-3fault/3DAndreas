@@ -9,8 +9,9 @@
  * - Scenario 3, crowd: `PHYBENCH_COUNT` boxes in a walled arena, fifty of them kicked every two seconds.
  * - Scenario 4, idle: the boxes of scenario 3 left at rest.
  *
- * The component counts its own time and the object updates it sends. The numbers printed at the
- * end cover the seconds after `BENCH_WARMUP`.
+ * The component counts its own time and the object updates it sends, and a timer of one millisecond
+ * measures the gaps between server ticks unless `PHYBENCH_NO_TICKS` is defined. The numbers printed
+ * at the end cover the seconds after `BENCH_WARMUP`.
  */
 
 #if !defined PHYBENCH_SCENARIO
@@ -35,6 +36,8 @@
 #define BENCH_RANGE                     (30)
 #define BENCH_WARMUP                    (15)
 
+#define BENCH_LONGEST_GAP               (250)
+
 #define POOL_BALLS                      (16)
 #define POOL_BALL_SIZE                  (0.05)
 #define POOL_LENGTH                     (2.2)
@@ -47,7 +50,10 @@ static
     gThrown,
     gStopped,
     gWarmUpdates,
-    Float:gWarmMilliseconds
+    Float:gWarmMilliseconds,
+    bool:gWarm,
+    gLastTick,
+    gGaps[BENCH_LONGEST_GAP + 1]
 ;
 
 #if PHYBENCH_SCENARIO == 1
@@ -226,6 +232,21 @@ public @Bench_Join() {
     return 1;
 }
 
+forward @Bench_Tick();
+public @Bench_Tick() {
+    new const
+        now = GetTickCount()
+    ;
+
+    if (gWarm) {
+        ++gGaps[min(now - gLastTick, BENCH_LONGEST_GAP)];
+    }
+
+    gLastTick = now;
+
+    return 1;
+}
+
 forward @Bench_Warm();
 public @Bench_Warm() {
     new
@@ -233,6 +254,7 @@ public @Bench_Warm() {
     ;
 
     A3D_GetStats(active, gWarmUpdates, gWarmMilliseconds);
+    gWarm = true;
 
     return 1;
 }
@@ -253,6 +275,36 @@ public @Bench_End() {
 
     printf("[physbench] scenario %i, count %i, bots %i: %i shots, %i kicks, %i thrown, %i stopped, %i active", PHYBENCH_SCENARIO, PHYBENCH_COUNT, PHYBENCH_BOTS, gShots, gKicks, gThrown, gStopped, active);
     printf("[physbench] component: %.2f ms per second, %.0f object updates per second", (milliseconds - gWarmMilliseconds) / seconds, float(updates - gWarmUpdates) / seconds);
+
+    new
+        ticks,
+        longest,
+        typical,
+        slow
+    ;
+
+    for (new i; i <= BENCH_LONGEST_GAP; ++i) {
+        ticks += gGaps[i];
+
+        if (gGaps[i] != 0) {
+            longest = i;
+        }
+
+        if (gGaps[i] > gGaps[typical]) {
+            typical = i;
+        }
+    }
+
+    for (new i = BENCH_LONGEST_GAP, count; i != 0; --i) {
+        count += gGaps[i];
+
+        if (count * 1000 >= ticks) {
+            slow = i;
+            break;
+        }
+    }
+
+    printf("[physbench] ticks: %i, gap mostly %i ms, one in a thousand %i ms or more, longest %i ms", ticks, typical, slow, longest);
 
     #if PHYBENCH_SCENARIO == 3 || PHYBENCH_SCENARIO == 4
         for (new i; i != PHYBENCH_COUNT; ++i) {
@@ -304,6 +356,9 @@ public OnGameModeInit() {
         SetTimer("@Bench_Join", 250, true);
     #endif
 
+    #if !defined PHYBENCH_NO_TICKS
+        SetTimer("@Bench_Tick", 1, true);
+    #endif
     SetTimer("@Bench_Warm", BENCH_WARMUP * 1000, false);
     SetTimer("@Bench_End", PHYBENCH_SECONDS * 1000, false);
     printf("[physbench] scenario %i started", PHYBENCH_SCENARIO);
