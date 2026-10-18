@@ -29,6 +29,8 @@ The same queries on ColAndreas 1.5 and on 3DAndreas, measured with [`tests/colan
 | 1,000 rays that return every hit | 19 ms | 9 ms |
 | 1,000 contact tests | 7 ms | 2 ms |
 
+![Time of one query against ColAndreas](docs/bench/queries.svg)
+
 A bare server, with neither of them, is ready in 0.25 s and uses 51 MB. When rays stop at the water, as they do in ColAndreas, 113 of 120 ground heights across the map are identical and the other 7 lie within 5 mm.
 
 ## Cost on the server
@@ -37,13 +39,29 @@ Each scenario of [`tests/stress.pwn`](tests/stress.pwn) ran for a minute on 3DAn
 
 | Scenario | Component, share of one core | Whole server, share of one core | Updates sent |
 | --- | --- | --- | --- |
-| A pool table, a shot every six seconds | 0.5% | 1.5% | 31 a second |
-| Eight pool tables, a shot on each every six seconds | 1.6% | 4.3% | 428 a second |
-| Waves of 100 objects thrown every ten seconds, 50 bots connected | 0.8% | 3.0% | 168 a second |
-| 500 boxes in an arena, 50 kicked every two seconds, 50 bots connected | 2.4% | 7.0% | 790 a second |
-| The 500 boxes at rest | 0.05% | 0.7% | none |
+| A pool table, a shot every six seconds | 0.8% | 2.7% | 64 a second |
+| Eight pool tables, a shot on each every six seconds | 1.8% | 5.6% | 405 a second |
+| Waves of 100 objects thrown every ten seconds, 50 bots connected | 1.0% | 4.3% | 165 a second |
+| 500 boxes in an arena, 50 kicked every two seconds, 50 bots connected | 3.1% | 9.5% | 816 a second |
+| The 500 boxes at rest | 0.06% | 1.3% | none |
 
-Objects at rest cost almost nothing, so the cost follows the objects in motion, not the objects created. The [Performance](https://github.com/imshooter/3DAndreas/wiki/Performance) page of the wiki has the time of each query.
+Objects at rest cost almost nothing, so the cost follows the objects in motion, not the objects created. The same scenarios at growing counts, a minute per point:
+
+![3DAndreas main-thread time by object count](docs/bench/cpu.svg)
+
+![Object updates sent by object count](docs/bench/updates.svg)
+
+The 2,000 kicked boxes cost 11% of one core and stay at the limit of `max_updates`. Boxes at rest cost the same at 100 and at 2,000.
+
+![Slowest ticks by object count](docs/bench/ticks.svg)
+
+The server runs a tick every 5 ms. One tick in a thousand took 7 ms or more in nearly every run, and the longest gaps come and go with no trend as objects grow.
+
+![Server memory by object count](docs/bench/memory.svg)
+
+Memory follows the map, not the objects: 2,000 boxes add about 11 MB to a server of 180 MB.
+
+The numbers change by about a fifth from one session to another on the same computer, so compare runs made one after the other. The [Performance](https://github.com/imshooter/3DAndreas/wiki/Performance) page of the wiki has the time of each query.
 
 ## Installation
 
