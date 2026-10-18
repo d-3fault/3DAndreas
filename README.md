@@ -7,9 +7,10 @@ An open.mp component that simulates physics on the map of San Andreas with [Jolt
 
 ## Features
 
-- **Physics objects.** Spheres, boxes and objects shaped like a model fall, roll, bounce, float and push each other. Players see them as objects the component moves. Static objects and zones never move and make walls, tables and goals.
+- **Physics objects.** Spheres, boxes and objects shaped like a model fall, roll, bounce, float and push each other. Players see them as objects the component moves, with at most `max_updates` updates a second, so even a rain of hundreds of objects never floods a client. Static objects and zones never move and make walls, tables and goals.
+- **Model settings.** `models.json` gives the shape, mass, friction, bounce and more to 203 models, from balls to weapons, so `A3D_CreateObject(1946, x, y, z)` makes a basketball that bounces like one. Every other model gets a mass from its volume and a friction and bounce from what its collision is made of.
 - **World queries.** Rays give the point, the normal, the model and the surface of the game they hit. There are rays that return every hit, line of sight, ground height, sphere sweeps and the overlaps of a sphere, a box or a model.
-- **Players, vehicles and actors.** Players on foot and actors are capsules and vehicles are boxes that move with them, so objects bounce off them and queries find them. Searches in a sphere or a cone can require line of sight, and the camera of a player gives what they look at.
+- **Players, vehicles and actors.** Players on foot and actors are capsules and vehicles are boxes that move with them, so objects bounce off them and queries find them. A player pushes a pile of crates the way a person would, without throwing them. Searches in a sphere or a cone can require line of sight, and the camera of a player gives what they look at.
 - **The map.** Water levels, points under water or inside the collision of the map, free spots on the ground, predicted throws, the size and the `object.dat` data of models, and building removal for every virtual world or for one.
 - **The screen.** Where a point of the world shows on the screen of a player, and what a point of the screen shows, in text draw units.
 - **Geometry.** The rotation that stands an object on a slope, reflections, offsets relative to objects and vehicles, the parts of a vehicle, and quaternions.
@@ -30,10 +31,24 @@ The same queries on ColAndreas 1.5 and on 3DAndreas, measured with [`tests/colan
 
 A bare server, with neither of them, is ready in 0.25 s and uses 51 MB. When rays stop at the water, as they do in ColAndreas, 113 of 120 ground heights across the map are identical and the other 7 lie within 5 mm.
 
+## Cost on the server
+
+Each scenario of [`tests/stress.pwn`](tests/stress.pwn) ran for a minute on 3DAndreas 0.6.3, on one computer. The component column is the time [A3D_GetStats](https://github.com/imshooter/3DAndreas/wiki/A3D_GetStats) reports on the thread of the server, and the whole server column is the CPU the process used on all its threads, bots and network included, both as a share of one core:
+
+| Scenario | Component, share of one core | Whole server, share of one core | Updates sent |
+| --- | --- | --- | --- |
+| A pool table, a shot every six seconds | 0.5% | 1.5% | 31 a second |
+| Eight pool tables, a shot on each every six seconds | 1.6% | 4.3% | 428 a second |
+| Waves of 100 objects thrown every ten seconds, 50 bots connected | 0.8% | 3.0% | 168 a second |
+| 500 boxes in an arena, 50 kicked every two seconds, 50 bots connected | 2.4% | 7.0% | 790 a second |
+| The 500 boxes at rest | 0.05% | 0.7% | none |
+
+Objects at rest cost almost nothing, so the cost follows the objects in motion, not the objects created. The [Performance](https://github.com/imshooter/3DAndreas/wiki/Performance) page of the wiki has the time of each query.
+
 ## Installation
 
 1. Download the latest release from [Releases](https://github.com/imshooter/3DAndreas/releases).
-2. Extract it into the folder of the server. It holds `components/3DAndreas.dll`, `qawno/include/3DAndreas.inc` and `scriptfiles/3dandreas/world.db`.
+2. Extract it into the folder of the server. It holds `components/3DAndreas.dll`, `qawno/include/3DAndreas.inc`, `scriptfiles/3dandreas/world.db` and `scriptfiles/3dandreas/models.json`.
 3. Add `#include <3DAndreas>` to the scripts that use it, after `streamer.inc` when the script shows physics objects with streamer objects.
 
 Tested with open.mp 1.6.7 on Windows. Only a Windows build is available for now.
@@ -80,6 +95,7 @@ Every setting is optional. These are the defaults:
 ```json
 "3dandreas": {
     "database": "scriptfiles/3dandreas/world.db",
+    "models": "scriptfiles/3dandreas/models.json",
     "threads": 2,
     "rate": 60.0,
     "sync_error": 0.1,
@@ -88,6 +104,7 @@ Every setting is optional. These are the defaults:
     "bounce_speed": 0.1,
     "contact_distance": 0.02,
     "draw_distance": 0.0,
+    "max_updates": 1000,
     "floor": -100.0,
     "vehicles": true
 }
@@ -96,18 +113,38 @@ Every setting is optional. These are the defaults:
 | Key | Description |
 | --- | --- |
 | `database` | Map database, relative to the server. When the default file is missing, `scriptfiles/colandreas/ColAndreas.cadb` is read instead. |
+| `models` | Model settings, relative to the server. A missing file leaves every model with the collision of the game. |
 | `threads` | Worker threads of the simulation. `0` runs it on the thread of the server. |
 | `rate` | Simulation steps per second, at least `10`. |
-| `sync_error` | Distance in metres the object players see may stray from its body before a new move is sent. |
+| `sync_error` | Distance in metres the object players see may stray from its body, or its far end may turn away, before a new move is sent. |
 | `sync_horizon` | Seconds ahead each move sent to the players aims. |
 | `collision_speed` | Slowest impact in metres per second that calls `A3D_OnCollided`. |
 | `bounce_speed` | Slowest impact in metres per second that bounces. |
 | `contact_distance` | Distance in metres at which two bodies start to keep a contact. |
 | `draw_distance` | Draw distance of the objects the component creates. `0.0` takes the default of the game. |
+| `max_updates` | Most updates of the objects players see sent in a second. Every player acknowledges each one, and open.mp allows 3000 acknowledgements a second by default. |
 | `floor` | Height under which a falling object is stopped. |
 | `vehicles` | Whether vehicles take part in the physics world and in the queries. |
 
 The [Configuration](https://github.com/imshooter/3DAndreas/wiki/Configuration) page of the wiki tells when to change each one.
+
+## Model settings
+
+`models.json` describes models as `A3D_CreateObject` makes them: a shape where the game has none or a poor one, and the mass, friction, bounce, damping, rolling friction, buoyancy and sync error of each. The keys are model ids:
+
+```json
+"1946": {
+    "name": "baskt_ball_hi",
+    "shape": "sphere",
+    "radius": 0.208,
+    "mass": 0.62,
+    "bounce": 0.8,
+    "rolling_friction": 0.15,
+    "sync_error": 0.03
+}
+```
+
+A model the file leaves out keeps the collision of the game. Its mass is its volume times the density of what its collision is made of, so the wooden crate `1224` comes out at 42 kilograms, and its friction and bounce come from the same material. A mass passed to `A3D_CreateObject` wins over both. The file is read once when the server starts, in about a millisecond, and a longer file does not make objects slower to create. The [Model settings](https://github.com/imshooter/3DAndreas/wiki/Model-Settings) page of the wiki lists every setting and the materials.
 
 ## Map database
 
