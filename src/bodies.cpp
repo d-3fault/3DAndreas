@@ -17,8 +17,11 @@ namespace {
 
 constexpr float PlayerHalfHeight = 0.55f;
 constexpr float PlayerRadius = 0.35f;
-constexpr float PlayerTeleport = 10.0f;
 constexpr int MaxStepsPerTick = 4;
+constexpr float MinimumReach = 0.1f;
+constexpr float PlayerMass = 80.0f;
+constexpr float PlayerCatchUp = 1.0f;
+constexpr float PlayerLag = 1.0f;
 
 bool hitOf(uint64_t data, Hit& hit, int& hitid) {
 	hitid = indexOf(data);
@@ -125,9 +128,15 @@ Activation activation;
 
 void createPlayerBody(int playerid, Vector3 position, int world) {
 	State& s = state();
-	JPH::BodyCreationSettings settings(pedShape(), JPH::RVec3(position.x, position.y, position.z), JPH::Quat::sIdentity(), JPH::EMotionType::Kinematic, playerLayer());
+	JPH::BodyCreationSettings settings(pedShape(), JPH::RVec3(position.x, position.y, position.z), JPH::Quat::sIdentity(), JPH::EMotionType::Dynamic, playerLayer());
 	settings.mUserData = userData(Kind::Player, playerid);
 	settings.mRestitution = 1.0f;
+	settings.mAllowedDOFs = JPH::EAllowedDOFs::TranslationX | JPH::EAllowedDOFs::TranslationY | JPH::EAllowedDOFs::TranslationZ;
+	settings.mOverrideMassProperties = JPH::EOverrideMassProperties::CalculateInertia;
+	settings.mMassPropertiesOverride.mMass = PlayerMass;
+	settings.mGravityFactor = 0.0f;
+	settings.mLinearDamping = 0.0f;
+	settings.mAllowSleeping = false;
 	settings.mCollisionGroup = bodyGroup(world, Kind::Player, CollideAll);
 	JPH::BodyID id = s.system->GetBodyInterface().CreateAndAddBody(settings, JPH::EActivation::Activate);
 	rememberBody(id, settings.mUserData);
@@ -146,6 +155,8 @@ void updatePlayers(float elapsed) {
 		if (playerid >= int(s.playerBodies.size())) {
 			s.playerBodies.resize(playerid + 1);
 			s.playerWorlds.resize(playerid + 1, -1);
+			s.playerSeen.resize(playerid + 1);
+			s.playerSeenAt.resize(playerid + 1, 0.0);
 		}
 		JPH::BodyID& id = s.playerBodies[playerid];
 		if (player->getState() != PlayerState_OnFoot) {
@@ -157,16 +168,27 @@ void updatePlayers(float elapsed) {
 		if (!id.IsInvalid() && s.playerWorlds[playerid] != world) {
 			removePlayer(playerid);
 		}
+		if (position != s.playerSeen[playerid]) {
+			s.playerSeen[playerid] = position;
+			s.playerSeenAt[playerid] = s.now;
+		}
 		if (id.IsInvalid()) {
 			createPlayerBody(playerid, position, world);
 			continue;
 		}
-		JPH::RVec3 target(position.x, position.y, position.z);
-		if ((bodies.GetPosition(id) - target).Length() > PlayerTeleport) {
+		JPH::RVec3 target = carriedPosition(position, player->getVelocity(), s.now - s.playerSeenAt[playerid]);
+		JPH::RVec3 now = bodies.GetPosition(id);
+		if ((now - target).Length() > PlayerLag) {
 			bodies.SetPosition(id, target, JPH::EActivation::Activate);
+			bodies.SetLinearVelocity(id, JPH::Vec3::sZero());
 			continue;
 		}
-		bodies.MoveKinematic(id, target, JPH::Quat::sIdentity(), elapsed);
+		JPH::Vec3 want = JPH::Vec3(target - now) / elapsed;
+		float limit = glm::length(player->getVelocity()) * GameVelocity + PlayerCatchUp;
+		if (want.Length() > limit) {
+			want = want.Normalized() * limit;
+		}
+		bodies.SetLinearVelocity(id, want);
 	}
 }
 
@@ -267,6 +289,12 @@ void dispatchEvents() {
 
 }
 
+JPH::RVec3 carriedPosition(Vector3 position, Vector3 velocity, double since) {
+	float lead = float(std::min(std::max(since, 0.0), SyncLead));
+	Vector3 ahead = position + velocity * (GameVelocity * lead);
+	return JPH::RVec3(ahead.x, ahead.y, ahead.z);
+}
+
 JPH::ShapeRefC pedShape() {
 	State& s = state();
 	if (s.playerShape == nullptr) {
@@ -310,7 +338,7 @@ Body* findBody(int index) {
 	return &s.bodies[index];
 }
 
-int createBody(AMX* owner, const JPH::Shape* shape, int modelid, Vector3 position, JPH::QuatArg rotation, float mass, int world, Kind kind) {
+int createBody(AMX* owner, const JPH::Shape* shape, int modelid, Vector3 position, JPH::QuatArg rotation, float mass, int world, Kind kind, const ModelSettings* model) {
 	State& s = state();
 	int index;
 	if (!s.freeBodies.empty()) {
@@ -322,19 +350,22 @@ int createBody(AMX* owner, const JPH::Shape* shape, int modelid, Vector3 positio
 	}
 	bool dynamic = kind == Kind::Object;
 	bool zone = kind == Kind::Zone;
+	if (!dynamic) {
+		model = nullptr;
+	}
 	JPH::EMotionType motion = dynamic ? JPH::EMotionType::Dynamic : zone ? JPH::EMotionType::Kinematic : JPH::EMotionType::Static;
 	JPH::BodyCreationSettings settings(shape, JPH::RVec3(position.x, position.y, position.z), rotation, motion, dynamic ? movingLayer() : staticLayer());
 	settings.mUserData = userData(kind, index);
 	settings.mCollisionGroup = bodyGroup(world, kind, CollideAll);
-	settings.mFriction = 0.5f;
-	settings.mRestitution = dynamic ? 0.3f : 1.0f;
+	settings.mFriction = model != nullptr ? model->friction.value_or(0.5f) : 0.5f;
+	settings.mRestitution = !dynamic ? 1.0f : model != nullptr ? model->bounce.value_or(0.3f) : 0.3f;
 	settings.mIsSensor = zone;
 	if (dynamic) {
 		settings.mOverrideMassProperties = JPH::EOverrideMassProperties::CalculateInertia;
 		settings.mMassPropertiesOverride.mMass = mass > 0.0f ? mass : 1.0f;
 		settings.mMotionQuality = JPH::EMotionQuality::LinearCast;
-		settings.mLinearDamping = 0.1f;
-		settings.mAngularDamping = 0.3f;
+		settings.mLinearDamping = model != nullptr ? model->linearDamping.value_or(0.1f) : 0.1f;
+		settings.mAngularDamping = model != nullptr ? model->angularDamping.value_or(0.3f) : 0.3f;
 	}
 	JPH::BodyID id = s.system->GetBodyInterface().CreateAndAddBody(settings, dynamic || zone ? JPH::EActivation::Activate : JPH::EActivation::DontActivate);
 	if (id.IsInvalid()) {
@@ -355,13 +386,23 @@ int createBody(AMX* owner, const JPH::Shape* shape, int modelid, Vector3 positio
 	body.from = position;
 	body.to = position;
 	body.rotation = toEuler(rotation);
+	body.turnedFrom = body.rotation;
+	body.heading = rotation;
+	body.reach = std::max(shape->GetLocalBounds().GetExtent().Length(), MinimumReach);
 	body.syncError = s.settings.syncError;
+	if (model != nullptr) {
+		body.rollingFriction = model->rollingFriction.value_or(0.0f);
+		body.syncError = model->syncError.value_or(body.syncError);
+	}
 	if (dynamic && modelid >= 0 && s.objects != nullptr) {
 		IObject* object = s.objects->create(modelid, position, body.rotation, s.settings.drawDistance);
 		if (object != nullptr) {
 			body.objectid = object->getID();
 			body.sync = Sync::Object;
 		}
+	}
+	if (model != nullptr && model->buoyancy.value_or(0.0f) > 0.0f) {
+		setBuoyancy(index, *model->buoyancy, model->drag);
 	}
 	return index;
 }

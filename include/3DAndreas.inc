@@ -28,6 +28,12 @@
  * with their interiors, the water, the surfaces and how the game moves the objects that can be
  * knocked over. A ColAndreas database still loads, without surfaces, water and that data.
  *
+ * `scriptfiles/3dandreas/models.json` describes models as `A3D_CreateObject` makes them: a sphere,
+ * a box or a cylinder in place of the collision, which gives a shape to models the game leaves
+ * without one, such as balls and weapons, and the mass, friction, bounce, damping and buoyancy each
+ * one starts with. A model the file leaves out gets a mass from the volume of its shape and the
+ * material of its collision, and the friction and bounce of that material.
+ *
  * A surface is a line of surfinfo.dat, from `0` for `DEFAULT` to `178`. Players carry `62`, the
  * surface `PED`, vehicles `63`, the surface `CAR`, and spheres and boxes of scripts `0`.
  *
@@ -121,7 +127,13 @@ enum A3D_PART {
  */
 
 /**
- * @brief      Create a moving physics object shaped like the collision of a model.
+ * @brief      Create a moving physics object shaped like the collision of a model, or as
+ *             `models.json` describes the model.
+ *
+ * A model in `models.json` takes the shape, friction, bounce, damping, rolling friction, buoyancy
+ * and sync error the file gives it, and its mass when `mass` is `0.0`. What the file leaves out
+ * comes from the model: the mass from the volume of its shape and the density of what most of its
+ * collision is made of, the friction and bounce from that material.
  *
  * @param      modelid  Model shown, and whose collision gives the shape.
  * @param      x        Position on the X axis.
@@ -130,13 +142,15 @@ enum A3D_PART {
  * @param      rx       Rotation on the X axis.
  * @param      ry       Rotation on the Y axis.
  * @param      rz       Rotation on the Z axis.
- * @param      mass     Mass in kilograms.
+ * @param      mass     Mass in kilograms, or `0.0` for the mass in `models.json`, or else the one
+ *                      the model gives from its volume.
  * @param      worldid  Virtual world it collides in, or `-1` for every world.
  *
  * @return     - the physics object
- *             - `INVALID_PHYSIC_ID` the model has no collision, or the world is full
+ *             - `INVALID_PHYSIC_ID` the model has no collision and no shape in `models.json`, or
+ *               the world is full
  */
-native Physic:A3D_CreateObject(modelid, Float:x, Float:y, Float:z, Float:rx = 0.0, Float:ry = 0.0, Float:rz = 0.0, Float:mass = 1.0, worldid = -1);
+native Physic:A3D_CreateObject(modelid, Float:x, Float:y, Float:z, Float:rx = 0.0, Float:ry = 0.0, Float:rz = 0.0, Float:mass = 0.0, worldid = -1);
 
 /**
  * @brief      Create a moving physics object shaped like a sphere.
@@ -559,8 +573,9 @@ native bool:A3D_SetBuoyancy(Physic:physicid, Float:buoyancy, Float:drag = 1.0);
 /**
  * @brief      Set how far the object players see may stray from the body before a new move is sent.
  *
- * Small objects that must look exact, such as pool balls, need a small value. Every update sent
- * costs a packet for each player who sees the object.
+ * It bounds the rotation too: the object may turn away from the body by the angle that moves its far
+ * end by that distance. Small objects that must look exact, such as pool balls, need a small value.
+ * Every update sent costs a packet for each player who sees the object.
  *
  * @param      physicid  Physics object to change.
  * @param      error     Distance in metres. Starts at `3dandreas.sync_error`.
@@ -828,7 +843,8 @@ native A3D_OverlapBox(Float:sizeX, Float:sizeY, Float:sizeZ, Float:x, Float:y, F
 /**
  * @brief      Find everything a model would overlap at a position, such as before placing an object.
  *
- * The model counts as the convex hull it moves with, which covers the gaps of a hollow model.
+ * The model counts as the shape it moves with: the shape `models.json` gives it, or the convex
+ * hull of its collision, which covers the gaps of a hollow model.
  *
  * @param      modelid  Model to place.
  * @param      x        Position on the X axis.
@@ -844,7 +860,7 @@ native A3D_OverlapBox(Float:sizeX, Float:sizeY, Float:sizeZ, Float:x, Float:y, F
  * @param      flags    What may be found.
  *
  * @return     - the number of things written
- *             - `0` the model has no collision
+ *             - `0` the model has no collision and no shape in `models.json`
  */
 native A3D_OverlapModel(modelid, Float:x, Float:y, Float:z, Float:rx, Float:ry, Float:rz, A3D_HIT:types[], hitids[], size = sizeof (hitids), worldid = -1, A3D_COLLIDE:flags = A3D_COLLIDE_ALL);
 
@@ -852,7 +868,7 @@ native A3D_OverlapModel(modelid, Float:x, Float:y, Float:z, Float:rx, Float:ry, 
  * @brief      Whether a model would touch anything at a position.
  *
  * Stops at the first thing found, so it is cheaper than `A3D_OverlapModel`. The model counts as
- * the convex hull it moves with.
+ * the shape it moves with, like in `A3D_OverlapModel`.
  *
  * @param      modelid  Model to place.
  * @param      x        Position on the X axis.
@@ -865,7 +881,8 @@ native A3D_OverlapModel(modelid, Float:x, Float:y, Float:z, Float:rx, Float:ry, 
  * @param      flags    What may be touched.
  *
  * @return     - `true` it would touch something
- *             - `false` the place is free, or the model has no collision
+ *             - `false` the place is free, or the model has no collision and no shape in
+ *               `models.json`
  */
 native bool:A3D_IsModelColliding(modelid, Float:x, Float:y, Float:z, Float:rx = 0.0, Float:ry = 0.0, Float:rz = 0.0, worldid = -1, A3D_COLLIDE:flags = A3D_COLLIDE_ALL);
 

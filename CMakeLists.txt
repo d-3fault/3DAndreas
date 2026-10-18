@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.19)
-project(3DAndreas VERSION 0.5.1 LANGUAGES C CXX)
+project(3DAndreas VERSION 0.6.3 LANGUAGES C CXX)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -60,6 +60,7 @@ add_library(3DAndreas SHARED
 	src/geometry.cpp
 	src/main.cpp
 	src/map.cpp
+	src/models.cpp
 	src/natives.cpp
 	src/probes.cpp
 	src/queries.cpp

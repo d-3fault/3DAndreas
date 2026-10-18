@@ -1,0 +1,1949 @@
+{
+    "321": {
+        "name": "gun_dildo1",
+        "shape": "box",
+        "size": [0.217, 0.046, 0.536],
+        "offset": [0.0, 0.037, 0.171],
+        "mass": 0.3,
+        "friction": 1.8,
+        "bounce": 0.5
+    },
+    "322": {
+        "name": "gun_dildo2",
+        "shape": "box",
+        "size": [0.066, 0.052, 0.245],
+        "offset": [0.078, 0.034, 0.034],
+        "mass": 0.25,
+        "friction": 1.8,
+        "bounce": 0.5,
+        "sync_error": 0.05
+    },
+    "323": {
+        "name": "gun_vibe1",
+        "shape": "box",
+        "size": [0.1, 0.08, 0.465],
+        "offset": [0.07, 0.035, 0.145],
+        "mass": 0.2,
+        "friction": 0.8,
+        "bounce": 0.35
+    },
+    "324": {
+        "name": "gun_vibe2",
+        "shape": "box",
+        "size": [0.074, 0.052, 0.286],
+        "offset": [0.071, 0.035, 0.054],
+        "mass": 0.2,
+        "friction": 0.8,
+        "bounce": 0.35,
+        "sync_error": 0.05
+    },
+    "325": {
+        "name": "flowera",
+        "shape": "box",
+        "size": [0.377, 0.379, 0.74],
+        "offset": [0.061, 0.029, 0.256],
+        "mass": 0.3,
+        "friction": 1.8,
+        "bounce": 0.05,
+        "linear_damping": 0.8,
+        "angular_damping": 0.8,
+        "buoyancy": 1.5
+    },
+    "326": {
+        "name": "gun_cane",
+        "shape": "box",
+        "size": [0.184, 0.07, 1.178],
+        "offset": [0.123, -0.003, 0.383],
+        "mass": 0.5,
+        "friction": 1.25,
+        "bounce": 0.3,
+        "buoyancy": 1.6
+    },
+    "331": {
+        "name": "brassknuckle",
+        "shape": "box",
+        "size": [0.119, 0.042, 0.16],
+        "offset": [0.104, 0.014, 0.007],
+        "mass": 0.25,
+        "friction": 1.01,
+        "bounce": 0.2,
+        "linear_damping": 0.05,
+        "sync_error": 0.05
+    },
+    "333": {
+        "name": "golfclub",
+        "shape": "box",
+        "size": [0.096, 0.069, 1.002],
+        "offset": [0.036, 0.013, 0.383],
+        "mass": 0.35,
+        "friction": 1.01,
+        "bounce": 0.2,
+        "linear_damping": 0.05
+    },
+    "334": {
+        "name": "nitestick",
+        "shape": "box",
+        "size": [0.197, 0.031, 0.663],
+        "offset": [0.135, 0.03, 0.119],
+        "mass": 0.6,
+        "friction": 0.8,
+        "bounce": 0.35
+    },
+    "335": {
+        "name": "knifecur",
+        "shape": "box",
+        "size": [0.065, 0.041, 0.413],
+        "offset": [0.084, 0.038, 0.098],
+        "mass": 0.2,
+        "friction": 1.01,
+        "bounce": 0.2,
+        "linear_damping": 0.05
+    },
+    "336": {
+        "name": "bat",
+        "shape": "box",
+        "size": [0.069, 0.129, 0.89],
+        "offset": [0.069, 0.014, 0.24],
+        "mass": 0.9,
+        "friction": 1.25,
+        "bounce": 0.3,
+        "buoyancy": 1.6
+    },
+    "337": {
+        "name": "shovel",
+        "shape": "box",
+        "size": [0.074, 0.285, 1.179],
+        "offset": [0.054, -0.003, 0.218],
+        "mass": 2.0,
+        "friction": 1.01,
+        "bounce": 0.2,
+        "linear_damping": 0.05
+    },
+    "338": {
+        "name": "poolcue",
+        "shape": "box",
+        "size": [0.032, 0.137, 1.538],
+        "offset": [0.068, 0.003, 0.464],
+        "mass": 0.55,
+        "friction": 1.25,
+        "bounce": 0.3,
+        "buoyancy": 1.6
+    },
+    "339": {
+        "name": "katana",
+        "shape": "box",
+        "size": [0.078, 0.085, 1.265],
+        "offset": [0.069, 0.018, 0.352],
+        "mass": 1.1,
+        "friction": 1.01,
+        "bounce": 0.2,
+        "linear_damping": 0.05
+    },
+    "341": {
+        "name": "chnsaw",
+        "shape": "box",
+        "size": [0.811, 0.251, 0.533],
+        "offset": [0.459, 0.045, 0.116],
+        "mass": 5.5,
+        "friction": 1.01,
+        "bounce": 0.2,
+        "linear_damping": 0.05
+    },
+    "342": {
+        "name": "grenade",
+        "shape": "box",
+        "size": [0.083, 0.096, 0.148],
+        "offset": [0.046, 0.04, 0.007],
+        "mass": 0.4,
+        "friction": 1.01,
+        "bounce": 0.2,
+        "linear_damping": 0.05,
+        "sync_error": 0.05
+    },
+    "343": {
+        "name": "teargas",
+        "shape": "cylinder",
+        "radius": 0.045,
+        "height": 0.204,
+        "axis": "z",
+        "offset": [0.062, 0.039, 0.03],
+        "mass": 0.5,
+        "friction": 0.8,
+        "bounce": 0.3,
+        "angular_damping": 0.1,
+        "rolling_friction": 0.3,
+        "sync_error": 0.05
+    },
+    "344": {
+        "name": "molotov",
+        "shape": "cylinder",
+        "radius": 0.04,
+        "height": 0.386,
+        "axis": "z",
+        "offset": [0.059, 0.048, -0.013],
+        "mass": 0.8,
+        "friction": 0.61,
+        "bounce": 0.2,
+        "angular_damping": 0.1,
+        "rolling_friction": 0.3
+    },
+    "346": {
+        "name": "colt45",
+        "shape": "box",
+        "size": [0.248, 0.053, 0.183],
+        "offset": [0.118, 0.03, 0.036],
+        "mass": 1.1,
+        "friction": 1.01,
+        "bounce": 0.2,
+        "linear_damping": 0.05,
+        "sync_error": 0.05
+    },
+    "347": {
+        "name": "silenced",
+        "shape": "box",
+        "size": [0.37, 0.064, 0.207],
+        "offset": [0.178, 0.036, 0.048],
+        "mass": 1.3,
+        "friction": 1.01,
+        "bounce": 0.2,
+        "linear_damping": 0.05
+    },
+    "348": {
+        "name": "desert_eagle",
+        "shape": "box",
+        "size": [0.348, 0.068, 0.191],
+        "offset": [0.179, 0.019, 0.028],
+        "mass": 2.0,
+        "friction": 1.01,
+        "bounce": 0.2,
+        "linear_damping": 0.05
+    },
+    "349": {
+        "name": "chromegun",
+        "shape": "box",
+        "size": [1.044, 0.154, 0.317],
+        "offset": [0.252, 0.015, 0.065],
+        "mass": 3.4,
+        "friction": 1.01,
+        "bounce": 0.2,
+        "linear_damping": 0.05
+    },
+    "350": {
+        "name": "sawnoff",
+        "shape": "box",
+        "size": [0.572, 0.078, 0.21],
+        "offset": [0.276, 0.022, 0.052],
+        "mass": 2.5,
+        "friction": 1.01,
+        "bounce": 0.2,
+        "linear_damping": 0.05
+    },
+    "351": {
+        "name": "shotgspa",
+        "shape": "box",
+        "size": [0.714, 0.106, 0.308],
+        "offset": [0.37, 0.003, 0.089],
+        "mass": 4.4,
+        "friction": 1.01,
+        "bounce": 0.2,
+        "linear_damping": 0.05
+    },
+    "352": {
+        "name": "micro_uzi",
+        "shape": "box",
+        "size": [0.313, 0.063, 0.396],
+        "offset": [0.087, 0.018, -0.066],
+        "mass": 2.0,
+        "friction": 1.01,
+        "bounce": 0.2,
+        "linear_damping": 0.05
+    },
+    "353": {
+        "name": "mp5lng",
+        "shape": "box",
+        "size": [0.539, 0.094, 0.335],
+        "offset": [0.187, 0.009, 0.089],
+        "mass": 3.0,
+        "friction": 1.01,
+        "bounce": 0.2,
+        "linear_damping": 0.05
+    },
+    "355": {
+        "name": "ak47",
+        "shape": "box",
+        "size": [1.092, 0.13, 0.315],
+        "offset": [0.238, 0.01, 0.018],
+        "mass": 4.3,
+        "friction": 1.01,
+        "bounce": 0.2,
+        "linear_damping": 0.05
+    },
+    "356": {
+        "name": "m4",
+        "shape": "box",
+        "size": [0.994, 0.117, 0.277],
+        "offset": [0.242, 0.005, 0.028],
+        "mass": 3.4,
+        "friction": 1.01,
+        "bounce": 0.2,
+        "linear_damping": 0.05
+    },
+    "357": {
+        "name": "cuntgun",
+        "shape": "box",
+        "size": [1.026, 0.148, 0.308],
+        "offset": [0.234, 0.021, 0.06],
+        "mass": 3.6,
+        "friction": 1.01,
+        "bounce": 0.2,
+        "linear_damping": 0.05
+    },
+    "358": {
+        "name": "sniper",
+        "shape": "box",
+        "size": [1.081, 0.149, 0.245],
+        "offset": [0.223, 0.018, 0.054],
+        "mass": 6.5,
+        "friction": 1.01,
+        "bounce": 0.2,
+        "linear_damping": 0.05
+    },
+    "359": {
+        "name": "rocketla",
+        "shape": "box",
+        "size": [1.428, 0.151, 0.263],
+        "offset": [-0.049, 0.039, 0.056],
+        "mass": 7.0,
+        "friction": 1.01,
+        "bounce": 0.2,
+        "linear_damping": 0.05
+    },
+    "360": {
+        "name": "heatseek",
+        "shape": "box",
+        "size": [1.081, 0.152, 0.296],
+        "offset": [-0.091, 0.037, 0.072],
+        "mass": 12.0,
+        "friction": 1.01,
+        "bounce": 0.2,
+        "linear_damping": 0.05
+    },
+    "361": {
+        "name": "flame",
+        "shape": "box",
+        "size": [1.068, 0.298, 0.73],
+        "offset": [0.568, 0.018, 0.116],
+        "mass": 10.0,
+        "friction": 1.01,
+        "bounce": 0.2,
+        "linear_damping": 0.05
+    },
+    "362": {
+        "name": "minigun",
+        "shape": "box",
+        "size": [1.145, 0.408, 0.71],
+        "offset": [0.618, 0.01, 0.103],
+        "mass": 30.0,
+        "friction": 1.01,
+        "bounce": 0.2,
+        "linear_damping": 0.05
+    },
+    "363": {
+        "name": "satchel",
+        "shape": "box",
+        "size": [0.222, 0.177, 0.557],
+        "offset": [0.187, 0.0, -0.047],
+        "mass": 1.0,
+        "friction": 1.8,
+        "bounce": 0.03,
+        "linear_damping": 0.3,
+        "angular_damping": 0.8,
+        "buoyancy": 1.2
+    },
+    "365": {
+        "name": "spraycan",
+        "shape": "cylinder",
+        "radius": 0.039,
+        "height": 0.237,
+        "axis": "z",
+        "offset": [0.055, 0.029, -0.053],
+        "mass": 0.35,
+        "friction": 0.8,
+        "bounce": 0.3,
+        "angular_damping": 0.1,
+        "rolling_friction": 0.3,
+        "sync_error": 0.05
+    },
+    "366": {
+        "name": "fire_ex",
+        "shape": "cylinder",
+        "radius": 0.178,
+        "height": 0.585,
+        "axis": "z",
+        "offset": [0.302, 0.057, -0.105],
+        "mass": 4.5,
+        "friction": 1.01,
+        "bounce": 0.2,
+        "linear_damping": 0.05,
+        "angular_damping": 0.1,
+        "rolling_friction": 0.3
+    },
+    "367": {
+        "name": "camera",
+        "shape": "box",
+        "size": [0.271, 0.184, 0.112],
+        "offset": [0.151, 0.104, 0.034],
+        "mass": 0.8,
+        "friction": 0.8,
+        "bounce": 0.1,
+        "sync_error": 0.05
+    },
+    "368": {
+        "name": "nvgoggles",
+        "shape": "box",
+        "size": [0.08, 0.128, 0.149],
+        "offset": [0.094, 0.055, -0.002],
+        "mass": 0.6,
+        "friction": 0.8,
+        "bounce": 0.1,
+        "sync_error": 0.05
+    },
+    "369": {
+        "name": "irgoggles",
+        "shape": "box",
+        "size": [0.08, 0.128, 0.149],
+        "offset": [0.094, 0.055, -0.002],
+        "mass": 0.6,
+        "friction": 0.8,
+        "bounce": 0.1,
+        "sync_error": 0.05
+    },
+    "370": {
+        "name": "jetpack",
+        "shape": "box",
+        "size": [0.868, 0.903, 0.782],
+        "offset": [0.0, 0.067, 0.022],
+        "mass": 15.0,
+        "friction": 1.01,
+        "bounce": 0.2,
+        "linear_damping": 0.05
+    },
+    "371": {
+        "name": "gun_para",
+        "shape": "box",
+        "size": [0.356, 0.246, 0.501],
+        "offset": [0.0, -0.044, 0.031],
+        "mass": 7.0,
+        "friction": 1.8,
+        "bounce": 0.03,
+        "linear_damping": 0.3,
+        "angular_damping": 0.8,
+        "buoyancy": 1.2
+    },
+    "372": {
+        "name": "tec9",
+        "shape": "box",
+        "size": [0.406, 0.075, 0.369],
+        "offset": [0.205, 0.032, -0.047],
+        "mass": 1.4,
+        "friction": 1.01,
+        "bounce": 0.2,
+        "linear_damping": 0.05
+    },
+    "918": {
+        "name": "CJ_FLAME_Drum",
+        "shape": "cylinder",
+        "radius": 0.235,
+        "height": 0.751,
+        "axis": "z",
+        "offset": [0.023, 0.012, 0.004],
+        "mass": 15.0,
+        "friction": 1.01,
+        "bounce": 0.2,
+        "linear_damping": 0.05,
+        "angular_damping": 0.1,
+        "rolling_friction": 0.3
+    },
+    "948": {
+        "name": "Plant_Pot_10",
+        "shape": "model",
+        "mass": 8.0,
+        "friction": 1.25,
+        "bounce": 0.1
+    },
+    "949": {
+        "name": "Plant_Pot_4",
+        "shape": "model",
+        "mass": 10.0,
+        "friction": 1.25,
+        "bounce": 0.1
+    },
+    "1208": {
+        "name": "washer",
+        "shape": "model",
+        "mass": 65.0,
+        "friction": 0.8,
+        "bounce": 0.1
+    },
+    "1210": {
+        "name": "briefcase",
+        "shape": "model",
+        "mass": 2.5,
+        "friction": 0.8,
+        "bounce": 0.35
+    },
+    "1212": {
+        "name": "Money",
+        "shape": "box",
+        "size": [0.2, 0.075, 0.075],
+        "offset": [0.006, 0.007, 0.037],
+        "mass": 0.5,
+        "friction": 1.25,
+        "bounce": 0.02,
+        "linear_damping": 0.8,
+        "angular_damping": 0.8,
+        "buoyancy": 2.0,
+        "sync_error": 0.05
+    },
+    "1217": {
+        "name": "barrel2",
+        "shape": "cylinder",
+        "radius": 0.413,
+        "height": 1.124,
+        "axis": "z",
+        "offset": [0.008, 0.006, 0.141],
+        "mass": 30.0,
+        "friction": 1.01,
+        "bounce": 0.2,
+        "linear_damping": 0.05,
+        "angular_damping": 0.1,
+        "rolling_friction": 0.3
+    },
+    "1218": {
+        "name": "barrel1",
+        "shape": "cylinder",
+        "radius": 0.413,
+        "height": 1.124,
+        "axis": "z",
+        "offset": [0.008, 0.002, 0.07],
+        "mass": 30.0,
+        "friction": 1.01,
+        "bounce": 0.2,
+        "linear_damping": 0.05,
+        "angular_damping": 0.1,
+        "rolling_friction": 0.3
+    },
+    "1220": {
+        "name": "cardboardbox2",
+        "shape": "box",
+        "size": [0.727, 0.756, 0.678],
+        "offset": [0.005, 0.001, 0.0],
+        "mass": 8.0,
+        "friction": 1.25,
+        "bounce": 0.05,
+        "linear_damping": 0.3,
+        "buoyancy": 2.0
+    },
+    "1221": {
+        "name": "cardboardbox4",
+        "shape": "box",
+        "size": [0.995, 1.008, 0.912],
+        "offset": [0.001, 0.005, 0.0],
+        "mass": 8.0,
+        "friction": 1.25,
+        "bounce": 0.05,
+        "linear_damping": 0.3,
+        "buoyancy": 2.0
+    },
+    "1222": {
+        "name": "barrel3",
+        "shape": "cylinder",
+        "radius": 0.413,
+        "height": 1.124,
+        "axis": "z",
+        "offset": [0.007, 0.002, 0.086],
+        "mass": 30.0,
+        "friction": 1.01,
+        "bounce": 0.2,
+        "linear_damping": 0.05,
+        "angular_damping": 0.1,
+        "rolling_friction": 0.3
+    },
+    "1225": {
+        "name": "barrel4",
+        "shape": "cylinder",
+        "radius": 0.413,
+        "height": 1.124,
+        "axis": "z",
+        "offset": [0.003, 0.002, 0.156],
+        "mass": 30.0,
+        "friction": 1.01,
+        "bounce": 0.2,
+        "linear_damping": 0.05,
+        "angular_damping": 0.1,
+        "rolling_friction": 0.3
+    },
+    "1230": {
+        "name": "cardboardbox",
+        "shape": "box",
+        "size": [0.727, 0.619, 0.666],
+        "offset": [-0.014, 0.014, -0.069],
+        "mass": 5.0,
+        "friction": 1.25,
+        "bounce": 0.05,
+        "linear_damping": 0.3,
+        "buoyancy": 2.0
+    },
+    "1238": {
+        "name": "trafficcone",
+        "shape": "model",
+        "mass": 2.5,
+        "friction": 1.8,
+        "bounce": 0.5
+    },
+    "1242": {
+        "name": "bodyarmour",
+        "shape": "box",
+        "size": [0.271, 0.212, 0.34],
+        "offset": [0.004, 0.002, 0.001],
+        "mass": 4.0,
+        "friction": 1.8,
+        "bounce": 0.03,
+        "linear_damping": 0.3,
+        "angular_damping": 0.8,
+        "buoyancy": 1.2
+    },
+    "1264": {
+        "name": "BlackBag1",
+        "shape": "model",
+        "mass": 5.0,
+        "friction": 1.8,
+        "bounce": 0.03,
+        "linear_damping": 0.3,
+        "angular_damping": 0.8,
+        "buoyancy": 1.2
+    },
+    "1265": {
+        "name": "BlackBag2",
+        "shape": "model",
+        "mass": 5.0,
+        "friction": 1.8,
+        "bounce": 0.03,
+        "linear_damping": 0.3,
+        "angular_damping": 0.8,
+        "buoyancy": 1.2
+    },
+    "1271": {
+        "name": "gunbox",
+        "shape": "box",
+        "size": [0.727, 0.756, 0.678],
+        "offset": [0.0, -0.007, 0.002],
+        "mass": 20.0,
+        "friction": 1.25,
+        "bounce": 0.3,
+        "buoyancy": 1.6
+    },
+    "1279": {
+        "name": "craigpackage",
+        "shape": "box",
+        "size": [1.014, 0.508, 0.363],
+        "offset": [0.001, 0.002, 0.104],
+        "mass": 0.5,
+        "friction": 1.25,
+        "bounce": 0.02,
+        "linear_damping": 0.8,
+        "angular_damping": 0.8,
+        "buoyancy": 2.0
+    },
+    "1328": {
+        "name": "BinNt10_LA",
+        "shape": "model",
+        "mass": 8.0,
+        "friction": 0.8,
+        "bounce": 0.35
+    },
+    "1329": {
+        "name": "BinNt13_LA",
+        "shape": "model",
+        "mass": 8.0,
+        "friction": 0.8,
+        "bounce": 0.35
+    },
+    "1330": {
+        "name": "BinNt14_LA",
+        "shape": "model",
+        "mass": 8.0,
+        "friction": 0.8,
+        "bounce": 0.35
+    },
+    "1429": {
+        "name": "DYN_TV",
+        "shape": "model",
+        "mass": 25.0,
+        "friction": 0.8,
+        "bounce": 0.1
+    },
+    "1481": {
+        "name": "DYN_BAR_B_Q",
+        "shape": "model",
+        "mass": 15.0,
+        "friction": 1.01,
+        "bounce": 0.2,
+        "linear_damping": 0.05
+    },
+    "1512": {
+        "name": "DYN_WINE_03",
+        "shape": "cylinder",
+        "radius": 0.063,
+        "height": 0.404,
+        "axis": "z",
+        "offset": [0.015, 0.006, 0.004],
+        "mass": 1.6,
+        "friction": 0.61,
+        "bounce": 0.2,
+        "angular_damping": 0.1,
+        "rolling_friction": 0.3
+    },
+    "1518": {
+        "name": "DYN_TV_2",
+        "shape": "box",
+        "size": [0.615, 0.469, 0.569],
+        "offset": [0.003, 0.002, 0.005],
+        "mass": 20.0,
+        "friction": 0.8,
+        "bounce": 0.1
+    },
+    "1520": {
+        "name": "DYN_WINE_BOUNCE",
+        "shape": "cylinder",
+        "radius": 0.046,
+        "height": 0.382,
+        "axis": "z",
+        "offset": [0.013, 0.009, 0.132],
+        "mass": 1.3,
+        "friction": 0.61,
+        "bounce": 0.2,
+        "angular_damping": 0.1,
+        "rolling_friction": 0.3
+    },
+    "1575": {
+        "name": "drug_white",
+        "shape": "box",
+        "size": [0.538, 0.358, 0.179],
+        "offset": [0.004, 0.0, 0.09],
+        "mass": 1.0,
+        "friction": 1.25,
+        "bounce": 0.02,
+        "linear_damping": 0.8,
+        "angular_damping": 0.8,
+        "buoyancy": 2.0
+    },
+    "1582": {
+        "name": "pizzabox",
+        "shape": "box",
+        "size": [0.658, 0.658, 0.07],
+        "offset": [0.007, 0.003, 0.035],
+        "mass": 0.6,
+        "friction": 1.25,
+        "bounce": 0.05,
+        "linear_damping": 0.3,
+        "buoyancy": 2.0
+    },
+    "1598": {
+        "name": "beachball",
+        "shape": "sphere",
+        "radius": 0.297,
+        "offset": [0.002, 0.001, 0.0],
+        "mass": 0.15,
+        "friction": 1.25,
+        "bounce": 0.6,
+        "linear_damping": 1.5,
+        "angular_damping": 0.3,
+        "rolling_friction": 0.5,
+        "buoyancy": 10.0,
+        "sync_error": 0.03
+    },
+    "1650": {
+        "name": "petrolcanm",
+        "shape": "model",
+        "mass": 10.0,
+        "friction": 1.01,
+        "bounce": 0.2,
+        "linear_damping": 0.05
+    },
+    "1668": {
+        "name": "propvodkabotl1",
+        "shape": "cylinder",
+        "radius": 0.039,
+        "height": 0.346,
+        "axis": "z",
+        "offset": [0.008, 0.002, 0.006],
+        "mass": 1.2,
+        "friction": 0.61,
+        "bounce": 0.2,
+        "angular_damping": 0.1,
+        "rolling_friction": 0.3
+    },
+    "1669": {
+        "name": "propwinebotl1",
+        "shape": "cylinder",
+        "radius": 0.048,
+        "height": 0.346,
+        "axis": "z",
+        "offset": [0.001, 0.002, 0.006],
+        "mass": 1.2,
+        "friction": 0.61,
+        "bounce": 0.2,
+        "angular_damping": 0.1,
+        "rolling_friction": 0.3
+    },
+    "1711": {
+        "name": "kb_chair01",
+        "shape": "model",
+        "mass": 30.0,
+        "friction": 1.8,
+        "bounce": 0.03,
+        "linear_damping": 0.3,
+        "angular_damping": 0.8,
+        "buoyancy": 1.2
+    },
+    "1736": {
+        "name": "CJ_Stags_head",
+        "shape": "box",
+        "size": [0.528, 0.646, 0.997],
+        "offset": [0.013, 0.005, 0.004],
+        "mass": 8.0,
+        "friction": 1.25,
+        "bounce": 0.3,
+        "buoyancy": 1.6
+    },
+    "1747": {
+        "name": "LOW_TV_2",
+        "shape": "model",
+        "mass": 20.0,
+        "friction": 0.8,
+        "bounce": 0.1
+    },
+    "1748": {
+        "name": "LOW_TV_3",
+        "shape": "model",
+        "mass": 20.0,
+        "friction": 0.8,
+        "bounce": 0.1
+    },
+    "1749": {
+        "name": "MED_TV_3",
+        "shape": "model",
+        "mass": 22.0,
+        "friction": 0.8,
+        "bounce": 0.1
+    },
+    "1752": {
+        "name": "SWANK_TV_3",
+        "shape": "model",
+        "mass": 30.0,
+        "friction": 0.8,
+        "bounce": 0.1
+    },
+    "1781": {
+        "name": "MED_TV_1",
+        "shape": "model",
+        "mass": 20.0,
+        "friction": 0.8,
+        "bounce": 0.1
+    },
+    "1782": {
+        "name": "MED_VIDEO_2",
+        "shape": "model",
+        "mass": 4.0,
+        "friction": 0.8,
+        "bounce": 0.1
+    },
+    "1783": {
+        "name": "SWANK_VIDEO_2",
+        "shape": "model",
+        "mass": 3.0,
+        "friction": 0.8,
+        "bounce": 0.1
+    },
+    "1785": {
+        "name": "LOW_VIDEO_1",
+        "shape": "model",
+        "mass": 4.0,
+        "friction": 0.8,
+        "bounce": 0.1
+    },
+    "1787": {
+        "name": "MED_VIDEO_1",
+        "shape": "model",
+        "mass": 3.0,
+        "friction": 0.8,
+        "bounce": 0.1
+    },
+    "1788": {
+        "name": "SWANK_VIDEO_1",
+        "shape": "model",
+        "mass": 3.0,
+        "friction": 0.8,
+        "bounce": 0.1
+    },
+    "1790": {
+        "name": "SWANK_VIDEO_3",
+        "shape": "model",
+        "mass": 3.0,
+        "friction": 0.8,
+        "bounce": 0.1
+    },
+    "1791": {
+        "name": "SWANK_TV_2",
+        "shape": "model",
+        "mass": 20.0,
+        "friction": 0.8,
+        "bounce": 0.1
+    },
+    "1792": {
+        "name": "SWANK_TV_1",
+        "shape": "model",
+        "mass": 40.0,
+        "friction": 0.8,
+        "bounce": 0.1
+    },
+    "1809": {
+        "name": "MED_HI_FI",
+        "shape": "model",
+        "mass": 8.0,
+        "friction": 0.8,
+        "bounce": 0.1
+    },
+    "1840": {
+        "name": "speaker_2",
+        "shape": "box",
+        "size": [0.337, 0.325, 0.47],
+        "offset": [0.005, 0.001, 0.237],
+        "mass": 5.0,
+        "friction": 0.8,
+        "bounce": 0.1
+    },
+    "1886": {
+        "name": "shop_sec_cam",
+        "shape": "box",
+        "size": [0.224, 0.635, 0.659],
+        "offset": [0.02, 0.0, -0.325],
+        "mass": 1.5,
+        "friction": 0.8,
+        "bounce": 0.1
+    },
+    "1946": {
+        "name": "baskt_ball_hi",
+        "shape": "sphere",
+        "radius": 0.208,
+        "offset": [0.003, 0.008, 0.003],
+        "mass": 0.62,
+        "friction": 1.8,
+        "bounce": 0.8,
+        "linear_damping": 0.1,
+        "angular_damping": 0.05,
+        "rolling_friction": 0.15,
+        "buoyancy": 10.0,
+        "sync_error": 0.03
+    },
+    "1958": {
+        "name": "mxr_mix_body",
+        "shape": "box",
+        "size": [0.332, 0.544, 0.129],
+        "offset": [0.001, 0.004, 0.015],
+        "mass": 3.0,
+        "friction": 0.8,
+        "bounce": 0.1
+    },
+    "1974": {
+        "name": "kb_golfball",
+        "shape": "sphere",
+        "radius": 0.048,
+        "offset": [0.005, 0.0, 0.005],
+        "mass": 0.046,
+        "friction": 0.8,
+        "bounce": 0.75,
+        "linear_damping": 0.05,
+        "angular_damping": 0.05,
+        "rolling_friction": 0.4,
+        "sync_error": 0.03
+    },
+    "2011": {
+        "name": "nu_plant2_ofc",
+        "shape": "model",
+        "mass": 15.0,
+        "friction": 1.25,
+        "bounce": 0.1
+    },
+    "2037": {
+        "name": "CJ_PISTOL_AMMO",
+        "shape": "box",
+        "size": [0.19, 0.101, 0.145],
+        "offset": [0.003, 0.007, 0.0],
+        "mass": 0.8,
+        "friction": 1.01,
+        "bounce": 0.2,
+        "linear_damping": 0.05,
+        "sync_error": 0.05
+    },
+    "2039": {
+        "name": "AMMO_BOX_S1",
+        "shape": "box",
+        "size": [0.251, 0.061, 0.109],
+        "offset": [0.004, 0.004, 0.001],
+        "mass": 0.3,
+        "friction": 1.01,
+        "bounce": 0.2,
+        "linear_damping": 0.05,
+        "sync_error": 0.05
+    },
+    "2043": {
+        "name": "AMMO_BOX_M4",
+        "shape": "box",
+        "size": [0.175, 0.716, 0.222],
+        "offset": [0.014, 0.005, 0.007],
+        "mass": 1.5,
+        "friction": 1.01,
+        "bounce": 0.2,
+        "linear_damping": 0.05
+    },
+    "2057": {
+        "name": "Flame_tins",
+        "shape": "model",
+        "mass": 3.0,
+        "friction": 1.01,
+        "bounce": 0.2,
+        "linear_damping": 0.05
+    },
+    "2069": {
+        "name": "CJ_MLIGHT7",
+        "shape": "model",
+        "mass": 6.0,
+        "friction": 1.01,
+        "bounce": 0.2,
+        "linear_damping": 0.05
+    },
+    "2070": {
+        "name": "CJ_MLIGHT6",
+        "shape": "model",
+        "mass": 2.0,
+        "friction": 1.01,
+        "bounce": 0.2,
+        "linear_damping": 0.05
+    },
+    "2102": {
+        "name": "LOW_HI_FI_2",
+        "shape": "model",
+        "mass": 4.0,
+        "friction": 0.8,
+        "bounce": 0.1
+    },
+    "2105": {
+        "name": "CJ_MLIGHT14",
+        "shape": "model",
+        "mass": 2.0,
+        "friction": 1.01,
+        "bounce": 0.2,
+        "linear_damping": 0.05
+    },
+    "2106": {
+        "name": "CJ_MLIGHT15",
+        "shape": "model",
+        "mass": 2.0,
+        "friction": 1.01,
+        "bounce": 0.2,
+        "linear_damping": 0.05
+    },
+    "2114": {
+        "name": "basketball",
+        "shape": "sphere",
+        "radius": 0.151,
+        "offset": [0.007, 0.008, 0.005],
+        "mass": 0.62,
+        "friction": 1.8,
+        "bounce": 0.8,
+        "linear_damping": 0.1,
+        "angular_damping": 0.05,
+        "rolling_friction": 0.15,
+        "buoyancy": 10.0,
+        "sync_error": 0.03
+    },
+    "2149": {
+        "name": "CJ_MICROWAVE1",
+        "shape": "model",
+        "mass": 11.0,
+        "friction": 0.8,
+        "bounce": 0.1
+    },
+    "2190": {
+        "name": "PC_1",
+        "shape": "model",
+        "mass": 10.0,
+        "friction": 0.8,
+        "bounce": 0.1
+    },
+    "2194": {
+        "name": "Plant_Pot_2",
+        "shape": "model",
+        "mass": 3.0,
+        "friction": 1.25,
+        "bounce": 0.1
+    },
+    "2195": {
+        "name": "Plant_Pot_3",
+        "shape": "model",
+        "mass": 10.0,
+        "friction": 1.25,
+        "bounce": 0.1
+    },
+    "2196": {
+        "name": "WORK_LAMP1",
+        "shape": "model",
+        "mass": 1.5,
+        "friction": 1.01,
+        "bounce": 0.2,
+        "linear_damping": 0.05
+    },
+    "2224": {
+        "name": "CJ_Sphere_TV",
+        "shape": "box",
+        "size": [0.77, 0.77, 1.273],
+        "offset": [0.177, 0.885, 0.641],
+        "mass": 20.0,
+        "friction": 0.8,
+        "bounce": 0.1
+    },
+    "2226": {
+        "name": "LOW_HI_FI_3",
+        "shape": "model",
+        "mass": 5.0,
+        "friction": 0.8,
+        "bounce": 0.1
+    },
+    "2229": {
+        "name": "SWANK_SPEAKER",
+        "shape": "model",
+        "mass": 15.0,
+        "friction": 0.8,
+        "bounce": 0.1
+    },
+    "2230": {
+        "name": "SWANK_SPEAKER_2",
+        "shape": "model",
+        "mass": 15.0,
+        "friction": 0.8,
+        "bounce": 0.1
+    },
+    "2231": {
+        "name": "SWANK_SPEAKER_3",
+        "shape": "model",
+        "mass": 10.0,
+        "friction": 0.8,
+        "bounce": 0.1
+    },
+    "2232": {
+        "name": "MED_SPEAKER_4",
+        "shape": "model",
+        "mass": 15.0,
+        "friction": 0.8,
+        "bounce": 0.1
+    },
+    "2233": {
+        "name": "SWANK_SPEAKER_4",
+        "shape": "model",
+        "mass": 8.0,
+        "friction": 0.8,
+        "bounce": 0.1
+    },
+    "2238": {
+        "name": "CJ_LAVA_LAMP",
+        "shape": "model",
+        "mass": 1.5,
+        "friction": 0.61,
+        "bounce": 0.2,
+        "angular_damping": 0.1,
+        "rolling_friction": 0.3
+    },
+    "2240": {
+        "name": "Plant_Pot_8",
+        "shape": "model",
+        "mass": 8.0,
+        "friction": 1.25,
+        "bounce": 0.1
+    },
+    "2244": {
+        "name": "Plant_Pot_9",
+        "shape": "model",
+        "mass": 6.0,
+        "friction": 1.25,
+        "bounce": 0.1
+    },
+    "2247": {
+        "name": "Plant_Pot_15",
+        "shape": "model",
+        "mass": 3.0,
+        "friction": 1.25,
+        "bounce": 0.1
+    },
+    "2249": {
+        "name": "Plant_Pot_18",
+        "shape": "model",
+        "mass": 3.0,
+        "friction": 1.25,
+        "bounce": 0.1
+    },
+    "2250": {
+        "name": "Plant_Pot_19",
+        "shape": "model",
+        "mass": 3.0,
+        "friction": 1.25,
+        "bounce": 0.1
+    },
+    "2253": {
+        "name": "Plant_Pot_22",
+        "shape": "model",
+        "mass": 5.0,
+        "friction": 1.25,
+        "bounce": 0.1
+    },
+    "2332": {
+        "name": "KEV_SAFE",
+        "shape": "model",
+        "mass": 150.0,
+        "friction": 1.01,
+        "bounce": 0.2,
+        "linear_damping": 0.05
+    },
+    "2358": {
+        "name": "AMMO_BOX_c2",
+        "shape": "model",
+        "mass": 10.0,
+        "friction": 1.01,
+        "bounce": 0.2,
+        "linear_damping": 0.05
+    },
+    "2421": {
+        "name": "CJ_FF_MICROW",
+        "shape": "model",
+        "mass": 18.0,
+        "friction": 0.8,
+        "bounce": 0.1
+    },
+    "2601": {
+        "name": "CJ_JUICE_CAN",
+        "shape": "cylinder",
+        "radius": 0.056,
+        "height": 0.174,
+        "axis": "z",
+        "offset": [0.008, 0.011, 0.004],
+        "mass": 0.37,
+        "friction": 0.8,
+        "bounce": 0.3,
+        "angular_damping": 0.1,
+        "rolling_friction": 0.3,
+        "sync_error": 0.05
+    },
+    "2680": {
+        "name": "CJ_Padlock",
+        "shape": "box",
+        "size": [0.22, 0.244, 0.355],
+        "offset": [0.001, 0.016, -0.006],
+        "mass": 0.3,
+        "friction": 1.01,
+        "bounce": 0.2,
+        "linear_damping": 0.05
+    },
+    "2700": {
+        "name": "CJ_SEX_TV2",
+        "shape": "model",
+        "mass": 15.0,
+        "friction": 0.8,
+        "bounce": 0.1
+    },
+    "2702": {
+        "name": "CJ_PIZZA_1",
+        "shape": "box",
+        "size": [0.04, 0.245, 0.167],
+        "offset": [0.012, 0.018, 0.007],
+        "mass": 0.12,
+        "friction": 1.8,
+        "bounce": 0.05,
+        "angular_damping": 0.8,
+        "sync_error": 0.05
+    },
+    "2703": {
+        "name": "CJ_BURG_1",
+        "shape": "box",
+        "size": [0.154, 0.106, 0.147],
+        "offset": [0.019, 0.017, 0.007],
+        "mass": 0.25,
+        "friction": 1.8,
+        "bounce": 0.05,
+        "angular_damping": 0.8,
+        "sync_error": 0.05
+    },
+    "2709": {
+        "name": "Pain_Killer",
+        "shape": "cylinder",
+        "radius": 0.078,
+        "height": 0.283,
+        "axis": "z",
+        "offset": [0.013, 0.011, 0.002],
+        "mass": 0.1,
+        "friction": 0.8,
+        "bounce": 0.3,
+        "angular_damping": 0.1,
+        "rolling_friction": 0.3,
+        "sync_error": 0.05
+    },
+    "2726": {
+        "name": "LM_stripLamp",
+        "shape": "model",
+        "mass": 2.0,
+        "friction": 1.01,
+        "bounce": 0.2,
+        "linear_damping": 0.05
+    },
+    "2769": {
+        "name": "CJ_CJ_BURG2",
+        "shape": "box",
+        "size": [0.268, 0.155, 0.05],
+        "offset": [0.002, 0.008, 0.005],
+        "mass": 0.2,
+        "friction": 1.8,
+        "bounce": 0.05,
+        "angular_damping": 0.8,
+        "sync_error": 0.05
+    },
+    "2804": {
+        "name": "CJ_MEAT_1",
+        "shape": "model",
+        "mass": 3.0,
+        "friction": 1.8,
+        "bounce": 0.05,
+        "angular_damping": 0.8
+    },
+    "2814": {
+        "name": "GB_takeaway01",
+        "shape": "box",
+        "size": [0.519, 0.515, 0.119],
+        "offset": [0.006, 0.004, 0.055],
+        "mass": 0.6,
+        "friction": 1.25,
+        "bounce": 0.05,
+        "linear_damping": 0.3,
+        "buoyancy": 2.0
+    },
+    "2828": {
+        "name": "gb_ornament02",
+        "shape": "model",
+        "mass": 1.0,
+        "friction": 1.25,
+        "bounce": 0.3,
+        "buoyancy": 1.6
+    },
+    "2891": {
+        "name": "kmb_packet",
+        "shape": "model",
+        "mass": 1.5,
+        "friction": 1.8,
+        "bounce": 0.03,
+        "linear_damping": 0.3,
+        "angular_damping": 0.8,
+        "buoyancy": 1.2
+    },
+    "2901": {
+        "name": "kmb_marijuana",
+        "shape": "model",
+        "mass": 20.0,
+        "friction": 1.8,
+        "bounce": 0.05,
+        "linear_damping": 0.8,
+        "angular_damping": 0.8,
+        "buoyancy": 1.5
+    },
+    "2912": {
+        "name": "temp_crate1",
+        "shape": "box",
+        "size": [0.7, 0.7, 0.7],
+        "offset": [0.004, 0.005, 0.35],
+        "mass": 25.0,
+        "friction": 1.25,
+        "bounce": 0.3,
+        "buoyancy": 1.6
+    },
+    "2916": {
+        "name": "kmb_dumbbell",
+        "shape": "model",
+        "mass": 10.0,
+        "friction": 1.01,
+        "bounce": 0.2,
+        "linear_damping": 0.05
+    },
+    "2919": {
+        "name": "kmb_holdall",
+        "shape": "model",
+        "mass": 5.0,
+        "friction": 1.8,
+        "bounce": 0.03,
+        "linear_damping": 0.3,
+        "angular_damping": 0.8,
+        "buoyancy": 1.2
+    },
+    "2936": {
+        "name": "kmb_rock",
+        "shape": "model",
+        "mass": 500.0,
+        "friction": 1.25,
+        "bounce": 0.1
+    },
+    "2969": {
+        "name": "level_ammobox",
+        "shape": "model",
+        "mass": 6.0,
+        "friction": 1.25,
+        "bounce": 0.3,
+        "buoyancy": 1.6
+    },
+    "3013": {
+        "name": "cr_ammobox",
+        "shape": "model",
+        "mass": 4.0,
+        "friction": 1.25,
+        "bounce": 0.3,
+        "buoyancy": 1.6
+    },
+    "3026": {
+        "name": "para_pack",
+        "shape": "box",
+        "size": [0.476, 0.369, 0.31],
+        "offset": [0.236, 0.035, 0.001],
+        "mass": 2.0,
+        "friction": 1.8,
+        "bounce": 0.03,
+        "linear_damping": 0.3,
+        "angular_damping": 0.8,
+        "buoyancy": 1.2
+    },
+    "3065": {
+        "name": "BBALL_col",
+        "shape": "sphere",
+        "radius": 0.128,
+        "offset": [0.015, 0.012, 0.004],
+        "mass": 0.62,
+        "friction": 1.8,
+        "bounce": 0.8,
+        "linear_damping": 0.1,
+        "angular_damping": 0.05,
+        "rolling_friction": 0.15,
+        "buoyancy": 10.0,
+        "sync_error": 0.03
+    },
+    "3120": {
+        "name": "BBALL_ingame",
+        "shape": "sphere",
+        "radius": 0.128,
+        "offset": [-0.002, -0.001, 0.004],
+        "mass": 0.62,
+        "friction": 1.8,
+        "bounce": 0.8,
+        "linear_damping": 0.1,
+        "angular_damping": 0.05,
+        "rolling_friction": 0.15,
+        "buoyancy": 10.0,
+        "sync_error": 0.03
+    },
+    "11736": {
+        "name": "MedicalSatchel1",
+        "shape": "model",
+        "mass": 1.0,
+        "friction": 0.8,
+        "bounce": 0.35
+    },
+    "11743": {
+        "name": "MCoffeeMachine1",
+        "shape": "model",
+        "mass": 5.0,
+        "friction": 0.8,
+        "bounce": 0.1
+    },
+    "11746": {
+        "name": "DoorKey1",
+        "shape": "box",
+        "size": [0.077, 0.01, 0.03],
+        "mass": 0.02,
+        "friction": 1.01,
+        "bounce": 0.2,
+        "linear_damping": 0.05,
+        "sync_error": 0.05
+    },
+    "11747": {
+        "name": "Bandage1",
+        "shape": "box",
+        "size": [0.067, 0.067, 0.073],
+        "mass": 0.05,
+        "friction": 1.8,
+        "bounce": 0.03,
+        "linear_damping": 0.3,
+        "angular_damping": 0.8,
+        "buoyancy": 1.2,
+        "sync_error": 0.05
+    },
+    "11749": {
+        "name": "CSHandcuffs1",
+        "shape": "box",
+        "size": [0.069, 0.177, 0.01],
+        "offset": [0.0, 0.0, 0.004],
+        "mass": 0.3,
+        "friction": 1.01,
+        "bounce": 0.2,
+        "linear_damping": 0.05,
+        "sync_error": 0.05
+    },
+    "14705": {
+        "name": "int2Vase",
+        "shape": "model",
+        "mass": 2.0,
+        "friction": 1.25,
+        "bounce": 0.1
+    },
+    "18633": {
+        "name": "GTASAWrench1",
+        "shape": "box",
+        "size": [0.065, 0.63, 0.231],
+        "offset": [-0.001, 0.088, -0.098],
+        "mass": 1.0,
+        "friction": 1.01,
+        "bounce": 0.2,
+        "linear_damping": 0.05
+    },
+    "18634": {
+        "name": "GTASACrowbar1",
+        "shape": "box",
+        "size": [0.021, 0.718, 0.194],
+        "offset": [0.0, 0.137, -0.07],
+        "mass": 1.5,
+        "friction": 1.01,
+        "bounce": 0.2,
+        "linear_damping": 0.05
+    },
+    "18644": {
+        "name": "Screwdriver1",
+        "shape": "box",
+        "size": [0.032, 0.031, 0.364],
+        "offset": [-0.002, -0.002, -0.126],
+        "mass": 0.15,
+        "friction": 1.01,
+        "bounce": 0.2,
+        "linear_damping": 0.05
+    },
+    "19010": {
+        "name": "GlassesType5",
+        "shape": "box",
+        "size": [0.156, 0.148, 0.036],
+        "offset": [0.004, 0.002, -0.022],
+        "mass": 0.03,
+        "friction": 0.8,
+        "bounce": 0.35,
+        "sync_error": 0.05
+    },
+    "19023": {
+        "name": "GlassesType18",
+        "shape": "box",
+        "size": [0.167, 0.148, 0.044],
+        "offset": [-0.003, 0.002, -0.022],
+        "mass": 0.03,
+        "friction": 0.8,
+        "bounce": 0.35,
+        "sync_error": 0.05
+    },
+    "19024": {
+        "name": "GlassesType19",
+        "shape": "box",
+        "size": [0.167, 0.148, 0.044],
+        "offset": [-0.003, 0.002, -0.022],
+        "mass": 0.03,
+        "friction": 0.8,
+        "bounce": 0.35,
+        "sync_error": 0.05
+    },
+    "19025": {
+        "name": "GlassesType20",
+        "shape": "box",
+        "size": [0.167, 0.148, 0.044],
+        "offset": [-0.003, 0.002, -0.022],
+        "mass": 0.03,
+        "friction": 0.8,
+        "bounce": 0.35,
+        "sync_error": 0.05
+    },
+    "19026": {
+        "name": "GlassesType21",
+        "shape": "box",
+        "size": [0.167, 0.148, 0.044],
+        "offset": [-0.003, 0.002, -0.022],
+        "mass": 0.03,
+        "friction": 0.8,
+        "bounce": 0.35,
+        "sync_error": 0.05
+    },
+    "19028": {
+        "name": "GlassesType23",
+        "shape": "box",
+        "size": [0.167, 0.148, 0.044],
+        "offset": [-0.003, 0.002, -0.022],
+        "mass": 0.03,
+        "friction": 0.8,
+        "bounce": 0.35,
+        "sync_error": 0.05
+    },
+    "19031": {
+        "name": "GlassesType26",
+        "shape": "box",
+        "size": [0.167, 0.151, 0.042],
+        "offset": [-0.001, 0.001, -0.02],
+        "mass": 0.03,
+        "friction": 0.8,
+        "bounce": 0.35,
+        "sync_error": 0.05
+    },
+    "19054": {
+        "name": "XmasBox1",
+        "shape": "box",
+        "size": [1.199, 1.199, 1.314],
+        "mass": 3.0,
+        "friction": 1.25,
+        "bounce": 0.05,
+        "linear_damping": 0.3,
+        "buoyancy": 2.0
+    },
+    "19055": {
+        "name": "XmasBox2",
+        "shape": "box",
+        "size": [1.199, 1.199, 1.314],
+        "mass": 3.0,
+        "friction": 1.25,
+        "bounce": 0.05,
+        "linear_damping": 0.3,
+        "buoyancy": 2.0
+    },
+    "19056": {
+        "name": "XmasBox3",
+        "shape": "box",
+        "size": [1.199, 1.199, 1.314],
+        "mass": 3.0,
+        "friction": 1.25,
+        "bounce": 0.05,
+        "linear_damping": 0.3,
+        "buoyancy": 2.0
+    },
+    "19057": {
+        "name": "XmasBox4",
+        "shape": "box",
+        "size": [1.199, 1.199, 1.314],
+        "mass": 3.0,
+        "friction": 1.25,
+        "bounce": 0.05,
+        "linear_damping": 0.3,
+        "buoyancy": 2.0
+    },
+    "19058": {
+        "name": "XmasBox5",
+        "shape": "box",
+        "size": [1.199, 1.199, 1.314],
+        "mass": 3.0,
+        "friction": 1.25,
+        "bounce": 0.05,
+        "linear_damping": 0.3,
+        "buoyancy": 2.0
+    },
+    "19065": {
+        "name": "SantaHat2",
+        "shape": "box",
+        "size": [0.315, 0.171, 0.183],
+        "offset": [-0.075, 0.0, 0.002],
+        "mass": 0.05,
+        "friction": 1.8,
+        "bounce": 0.03,
+        "linear_damping": 0.3,
+        "angular_damping": 0.8,
+        "buoyancy": 1.2
+    },
+    "19137": {
+        "name": "CluckinBellHat1",
+        "shape": "box",
+        "size": [0.474, 0.445, 0.25],
+        "offset": [0.044, 0.004, 0.0],
+        "mass": 0.2,
+        "friction": 1.8,
+        "bounce": 0.03,
+        "linear_damping": 0.3,
+        "angular_damping": 0.8,
+        "buoyancy": 1.2
+    },
+    "19138": {
+        "name": "PoliceGlasses1",
+        "shape": "box",
+        "size": [0.14, 0.148, 0.035],
+        "offset": [0.01, 0.001, -0.016],
+        "mass": 0.03,
+        "friction": 0.8,
+        "bounce": 0.35,
+        "sync_error": 0.05
+    },
+    "19317": {
+        "name": "bassguitar01",
+        "shape": "box",
+        "size": [0.526, 0.033, 1.53],
+        "mass": 4.0,
+        "friction": 1.25,
+        "bounce": 0.3,
+        "buoyancy": 1.6
+    },
+    "19563": {
+        "name": "JuiceBox1",
+        "shape": "box",
+        "size": [0.157, 0.096, 0.273],
+        "offset": [0.0, 0.0, 0.137],
+        "mass": 0.25,
+        "friction": 1.25,
+        "bounce": 0.05,
+        "linear_damping": 0.3,
+        "buoyancy": 2.0,
+        "sync_error": 0.05
+    },
+    "19564": {
+        "name": "JuiceBox2",
+        "shape": "box",
+        "size": [0.157, 0.096, 0.273],
+        "offset": [0.0, 0.0, 0.137],
+        "mass": 0.25,
+        "friction": 1.25,
+        "bounce": 0.05,
+        "linear_damping": 0.3,
+        "buoyancy": 2.0,
+        "sync_error": 0.05
+    },
+    "19618": {
+        "name": "Safe1",
+        "shape": "model",
+        "mass": 150.0,
+        "friction": 1.01,
+        "bounce": 0.2,
+        "linear_damping": 0.05
+    },
+    "19621": {
+        "name": "OilCan1",
+        "shape": "box",
+        "size": [0.115, 0.278, 0.26],
+        "offset": [0.0, -0.136, 0.036],
+        "mass": 1.0,
+        "friction": 1.01,
+        "bounce": 0.2,
+        "linear_damping": 0.05,
+        "sync_error": 0.05
+    },
+    "19624": {
+        "name": "Case1",
+        "shape": "box",
+        "size": [0.57, 0.194, 0.43],
+        "offset": [-0.002, 0.001, -0.207],
+        "mass": 4.0,
+        "friction": 0.8,
+        "bounce": 0.35
+    },
+    "19786": {
+        "name": "LCDTVBig1",
+        "shape": "model",
+        "mass": 30.0,
+        "friction": 0.8,
+        "bounce": 0.1
+    },
+    "19787": {
+        "name": "LCDTV1",
+        "shape": "model",
+        "mass": 15.0,
+        "friction": 0.8,
+        "bounce": 0.1
+    },
+    "19820": {
+        "name": "AlcoholBottle1",
+        "shape": "cylinder",
+        "radius": 0.071,
+        "height": 0.608,
+        "axis": "z",
+        "offset": [0.0, 0.0, 0.304],
+        "mass": 1.3,
+        "friction": 0.61,
+        "bounce": 0.2,
+        "angular_damping": 0.1,
+        "rolling_friction": 0.3
+    },
+    "19821": {
+        "name": "AlcoholBottle2",
+        "shape": "cylinder",
+        "radius": 0.071,
+        "height": 0.608,
+        "axis": "z",
+        "offset": [0.0, 0.0, 0.303],
+        "mass": 1.3,
+        "friction": 0.61,
+        "bounce": 0.2,
+        "angular_damping": 0.1,
+        "rolling_friction": 0.3
+    },
+    "19822": {
+        "name": "AlcoholBottle3",
+        "shape": "cylinder",
+        "radius": 0.067,
+        "height": 0.505,
+        "axis": "z",
+        "offset": [0.0, 0.0, 0.252],
+        "mass": 1.3,
+        "friction": 0.61,
+        "bounce": 0.2,
+        "angular_damping": 0.1,
+        "rolling_friction": 0.3
+    },
+    "19823": {
+        "name": "AlcoholBottle4",
+        "shape": "cylinder",
+        "radius": 0.061,
+        "height": 0.371,
+        "axis": "z",
+        "offset": [0.0, 0.0, 0.185],
+        "mass": 1.3,
+        "friction": 0.61,
+        "bounce": 0.2,
+        "angular_damping": 0.1,
+        "rolling_friction": 0.3
+    },
+    "19824": {
+        "name": "AlcoholBottle5",
+        "shape": "cylinder",
+        "radius": 0.062,
+        "height": 0.531,
+        "axis": "z",
+        "offset": [0.0, 0.0, 0.265],
+        "mass": 1.3,
+        "friction": 0.61,
+        "bounce": 0.2,
+        "angular_damping": 0.1,
+        "rolling_friction": 0.3
+    },
+    "19825": {
+        "name": "SprunkClock1",
+        "shape": "model",
+        "mass": 1.0,
+        "friction": 0.8,
+        "bounce": 0.35
+    },
+    "19830": {
+        "name": "Blender1",
+        "shape": "model",
+        "mass": 3.0,
+        "friction": 0.8,
+        "bounce": 0.1
+    },
+    "19831": {
+        "name": "Barbeque1",
+        "shape": "model",
+        "mass": 20.0,
+        "friction": 1.01,
+        "bounce": 0.2,
+        "linear_damping": 0.05
+    },
+    "19832": {
+        "name": "AmmoBox1",
+        "shape": "model",
+        "mass": 8.0,
+        "friction": 1.01,
+        "bounce": 0.2,
+        "linear_damping": 0.05
+    },
+    "19843": {
+        "name": "MetalPanel1",
+        "shape": "model",
+        "mass": 15.0,
+        "friction": 1.01,
+        "bounce": 0.2,
+        "linear_damping": 0.05
+    },
+    "19847": {
+        "name": "LegHam1",
+        "shape": "model",
+        "mass": 2.0,
+        "friction": 1.8,
+        "bounce": 0.05,
+        "angular_damping": 0.8
+    },
+    "19893": {
+        "name": "LaptopSAMP1",
+        "shape": "model",
+        "mass": 2.0,
+        "friction": 0.8,
+        "bounce": 0.1
+    },
+    "19894": {
+        "name": "LaptopSAMP2",
+        "shape": "model",
+        "mass": 2.0,
+        "friction": 0.8,
+        "bounce": 0.1
+    },
+    "19897": {
+        "name": "CigarettePack2",
+        "shape": "box",
+        "size": [0.07, 0.112, 0.019],
+        "mass": 0.03,
+        "friction": 1.25,
+        "bounce": 0.02,
+        "linear_damping": 0.8,
+        "angular_damping": 0.8,
+        "buoyancy": 2.0,
+        "sync_error": 0.05
+    },
+    "19900": {
+        "name": "ToolCabinet2",
+        "shape": "model",
+        "mass": 60.0,
+        "friction": 1.01,
+        "bounce": 0.2,
+        "linear_damping": 0.05
+    },
+    "19921": {
+        "name": "CutsceneToolBox1",
+        "shape": "model",
+        "mass": 8.0,
+        "friction": 1.01,
+        "bounce": 0.2,
+        "linear_damping": 0.05
+    },
+    "19994": {
+        "name": "CutsceneChair1",
+        "shape": "model",
+        "mass": 5.0,
+        "friction": 1.01,
+        "bounce": 0.2,
+        "linear_damping": 0.05
+    },
+    "19995": {
+        "name": "CutsceneAmmoClip1",
+        "shape": "box",
+        "size": [0.023, 0.09, 0.138],
+        "offset": [0.0, -0.004, 0.021],
+        "mass": 0.2,
+        "friction": 1.01,
+        "bounce": 0.2,
+        "linear_damping": 0.05,
+        "sync_error": 0.05
+    },
+    "19999": {
+        "name": "CutsceneChair2",
+        "shape": "model",
+        "mass": 12.0,
+        "friction": 0.8,
+        "bounce": 0.35
+    }
+}

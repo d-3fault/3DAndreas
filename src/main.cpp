@@ -8,6 +8,7 @@ namespace {
 
 constexpr int ExtraBodies = 20000;
 const char* const OwnDatabase = "scriptfiles/3dandreas/world.db";
+const char* const OwnModels = "scriptfiles/3dandreas/models.json";
 const char* const ColAndreasDatabase = "scriptfiles/colandreas/ColAndreas.cadb";
 
 float readNumber(IConfig& config, const char* key, float fallback) {
@@ -47,6 +48,9 @@ public:
 		if (defaults || config.getType("3dandreas.database") == ConfigOptionType_None) {
 			config.setString("3dandreas.database", OwnDatabase);
 		}
+		if (defaults || config.getType("3dandreas.models") == ConfigOptionType_None) {
+			config.setString("3dandreas.models", OwnModels);
+		}
 		if (defaults || config.getType("3dandreas.threads") == ConfigOptionType_None) {
 			config.setInt("3dandreas.threads", 2);
 		}
@@ -58,6 +62,7 @@ public:
 		defaultNumber(config, defaults, "3dandreas.contact_distance", 0.02f);
 		defaultNumber(config, defaults, "3dandreas.draw_distance", 0.0f);
 		defaultNumber(config, defaults, "3dandreas.floor", -100.0f);
+		defaultNumber(config, defaults, "3dandreas.max_updates", 1000.0f);
 		if (defaults || config.getType("3dandreas.vehicles") == ConfigOptionType_None) {
 			config.setBool("3dandreas.vehicles", true);
 		}
@@ -73,6 +78,10 @@ public:
 		if (!database.empty()) {
 			s.settings.database = std::string(database.data(), database.size());
 		}
+		StringView models = config.getString("3dandreas.models");
+		if (!models.empty()) {
+			s.settings.models = std::string(models.data(), models.size());
+		}
 		int* threads = config.getInt("3dandreas.threads");
 		if (threads != nullptr) {
 			s.settings.threads = *threads;
@@ -85,6 +94,7 @@ public:
 		s.settings.contactDistance = std::max(readNumber(config, "3dandreas.contact_distance", 0.02f), 0.0005f);
 		s.settings.drawDistance = readNumber(config, "3dandreas.draw_distance", 0.0f);
 		s.settings.floor = readNumber(config, "3dandreas.floor", -100.0f);
+		s.settings.maxUpdates = std::max(readNumber(config, "3dandreas.max_updates", 1000.0f), 10.0f);
 		bool* vehicles = config.getBool("3dandreas.vehicles");
 		s.settings.vehicles = vehicles == nullptr || *vehicles;
 
@@ -95,6 +105,9 @@ public:
 			loaded = true;
 		}
 		double read = since(start);
+		start = std::chrono::steady_clock::now();
+		int described = loadModelSettings(s.settings.models);
+		double settings = since(start);
 		startWorld(int(s.placements.size()) + ExtraBodies);
 		listen();
 		start = std::chrono::steady_clock::now();
@@ -106,6 +119,9 @@ public:
 			core->logLn(LogLevel::Warning, "[3DAndreas] %s could not be read, so bodies collide only with each other and with static bodies.", s.settings.database.c_str());
 		}
 		core->printLn("3DAndreas " A3D_VERSION ": %i map objects from %u models, %u water polygons and %u surfaces of %s, read in %.0f ms and built in %.0f ms, %i threads", built, unsigned(s.models.size()), unsigned(s.waters.size()), unsigned(s.surfaces.size()), s.settings.database.c_str(), read, map, s.settings.threads);
+		if (described >= 0) {
+			core->printLn("3DAndreas " A3D_VERSION ": %i models described by %s, read in %.1f ms", described, s.settings.models.c_str(), settings);
+		}
 		if (loaded && s.colAndreas) {
 			core->logLn(LogLevel::Warning, "[3DAndreas] %s is a ColAndreas database, so hits carry no surface and there is no water. Build %s with phydb.", s.settings.database.c_str(), OwnDatabase);
 		}

@@ -14,6 +14,8 @@ namespace physics {
 namespace {
 
 constexpr float VehicleTeleport = 30.0f;
+constexpr float StillVehicle = 0.01f;
+constexpr float ThereSquared = 0.000001f;
 
 JPH::ShapeRefC vehicleShape(int model) {
 	State& s = state();
@@ -67,6 +69,7 @@ void updateVehicles(float elapsed) {
 			s.vehicleWorlds.resize(vehicleid + 1, -1);
 			s.vehiclePositions.resize(vehicleid + 1);
 			s.vehicleRotations.resize(vehicleid + 1);
+			s.vehicleSeenAt.resize(vehicleid + 1, 0.0);
 			s.vehicleMoving.resize(vehicleid + 1, 0);
 		}
 		int model = vehicle->getModel();
@@ -82,23 +85,32 @@ void updateVehicles(float elapsed) {
 			if (shape != nullptr) {
 				createVehicleBody(vehicleid, shape, model, position, vehicleRotation(synced), world);
 				s.vehicleRotations[vehicleid] = synced.q;
+				s.vehicleSeenAt[vehicleid] = s.now;
 			}
 			continue;
 		}
-		JPH::RVec3 target(position.x, position.y, position.z);
-		if (position == s.vehiclePositions[vehicleid] && synced.q == s.vehicleRotations[vehicleid]) {
-			if (s.vehicleMoving[vehicleid] != 0) {
+		bool fresh = position != s.vehiclePositions[vehicleid] || synced.q != s.vehicleRotations[vehicleid];
+		if (fresh) {
+			float distance = glm::distance(position, s.vehiclePositions[vehicleid]);
+			s.vehiclePositions[vehicleid] = position;
+			s.vehicleRotations[vehicleid] = synced.q;
+			s.vehicleSeenAt[vehicleid] = s.now;
+			if (distance > VehicleTeleport) {
 				s.vehicleMoving[vehicleid] = 0;
-				bodies.MoveKinematic(id, target, vehicleRotation(synced), elapsed);
+				bodies.SetPositionAndRotation(id, JPH::RVec3(position.x, position.y, position.z), vehicleRotation(synced), JPH::EActivation::DontActivate);
+				continue;
 			}
-			continue;
 		}
-		float distance = glm::distance(position, s.vehiclePositions[vehicleid]);
-		s.vehiclePositions[vehicleid] = position;
-		s.vehicleRotations[vehicleid] = synced.q;
-		if (distance > VehicleTeleport) {
-			s.vehicleMoving[vehicleid] = 0;
-			bodies.SetPositionAndRotation(id, target, vehicleRotation(synced), JPH::EActivation::DontActivate);
+		double since = s.now - s.vehicleSeenAt[vehicleid];
+		Vector3 velocity = vehicle->getVelocity();
+		JPH::RVec3 target = carriedPosition(position, velocity, since);
+		if (!fresh && (since >= SyncLead || glm::length(velocity) * GameVelocity < StillVehicle)) {
+			if (s.vehicleMoving[vehicleid] == 0) {
+				continue;
+			}
+			bool there = (bodies.GetPosition(id) - target).LengthSq() < ThereSquared;
+			bodies.MoveKinematic(id, target, vehicleRotation(synced), elapsed);
+			s.vehicleMoving[vehicleid] = there ? 0 : 1;
 			continue;
 		}
 		s.vehicleMoving[vehicleid] = 1;

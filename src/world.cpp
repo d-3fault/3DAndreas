@@ -5,6 +5,7 @@
 #include <Jolt/Physics/Collision/PhysicsMaterial.h>
 #include <Jolt/Physics/Collision/Shape/BoxShape.h>
 #include <Jolt/Physics/Collision/Shape/ConvexHullShape.h>
+#include <Jolt/Physics/Collision/Shape/CylinderShape.h>
 #include <Jolt/Physics/Collision/Shape/MeshShape.h>
 #include <Jolt/Physics/Collision/Shape/RotatedTranslatedShape.h>
 #include <Jolt/Physics/Collision/Shape/SphereShape.h>
@@ -290,6 +291,34 @@ JPH::ShapeRefC buildDynamic(const Model& model) {
 	return finishCompound(single);
 }
 
+JPH::ShapeRefC buildDescribed(const ModelSettings& settings, uint8_t surface) {
+	JPH::Ref<JPH::Shape> shape;
+	JPH::Quat rotation = JPH::Quat::sIdentity();
+	if (settings.shape == ModelShape::Sphere) {
+		shape = new JPH::SphereShape(std::max(settings.radius, MinimumHalfExtent), surfaceMaterial(surface));
+	} else if (settings.shape == ModelShape::Box) {
+		shape = boxShape(JPH::Vec3(settings.size.x, settings.size.y, settings.size.z) * 0.5f, surface);
+	} else if (settings.shape == ModelShape::Cylinder) {
+		float half = std::max(settings.height * 0.5f, MinimumHalfExtent);
+		float radius = std::max(settings.radius, MinimumHalfExtent);
+		shape = new JPH::CylinderShape(half, radius, std::min(JPH::cDefaultConvexRadius, std::min(half, radius)), surfaceMaterial(surface));
+		if (settings.axis == 0) {
+			rotation = JPH::Quat::sRotation(JPH::Vec3::sAxisZ(), 0.5f * JPH::JPH_PI);
+		} else if (settings.axis == 2) {
+			rotation = JPH::Quat::sRotation(JPH::Vec3::sAxisX(), 0.5f * JPH::JPH_PI);
+		}
+	} else {
+		return nullptr;
+	}
+	JPH::Vec3 offset(settings.offset.x, settings.offset.y, settings.offset.z);
+	if (offset.IsNearZero() && rotation.IsClose(JPH::Quat::sIdentity())) {
+		return shape;
+	}
+	JPH::RotatedTranslatedShapeSettings moved(offset, rotation, shape);
+	JPH::ShapeSettings::ShapeResult result = moved.Create();
+	return result.IsValid() ? result.Get() : nullptr;
+}
+
 void buildPlacedShapes() {
 	State& s = state();
 	std::vector<int> ids;
@@ -504,7 +533,13 @@ JPH::ShapeRefC dynamicShape(int modelid) {
 		return cached->second;
 	}
 	auto model = s.models.find(modelid);
-	JPH::ShapeRefC shape = model == s.models.end() ? nullptr : buildDynamic(model->second);
+	const ModelSettings* settings = findModelSettings(modelid);
+	JPH::ShapeRefC shape;
+	if (settings != nullptr && settings->shape != ModelShape::Collision) {
+		shape = buildDescribed(*settings, model == s.models.end() ? 0 : firstSurface(model->second));
+	} else if (model != s.models.end()) {
+		shape = buildDynamic(model->second);
+	}
 	s.dynamicShapes.emplace(modelid, shape);
 	return shape;
 }

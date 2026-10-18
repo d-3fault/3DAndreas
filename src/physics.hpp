@@ -10,6 +10,7 @@
 #include <cstdint>
 #include <memory>
 #include <mutex>
+#include <optional>
 #include <random>
 #include <string>
 #include <unordered_map>
@@ -29,6 +30,13 @@ namespace physics {
 constexpr int InvalidPhys = -1;
 constexpr int InvalidObject = 0xFFFF;
 constexpr float StandardGravity = 9.81f;
+
+/**
+ * @brief      Metres per second in one unit of the velocity the game syncs, and the longest a player
+ *             or a vehicle is carried on by its velocity when no new position arrives.
+ */
+constexpr float GameVelocity = 50.0f;
+constexpr double SyncLead = 0.1;
 
 /**
  * @brief      Room for every surface id of the game, and the surfaces the game gives to peds and to
@@ -109,8 +117,13 @@ enum class Sync {
 /**
  * @brief      A body created by a script: a moving object, a static object or a zone.
  *
- * `from`, `to`, `speed`, `sentAt` and `duration` describe the last move sent, so the position the
- * client shows can be worked out at any time.
+ * `from`, `to`, `speed`, `sentAt` and `duration` describe the last move sent, and `turnedFrom` and
+ * `rotation` the rotation it turns through, so what the client shows can be worked out at any time.
+ * `heading` is `rotation` as a Jolt quaternion. `lastVelocity` is the velocity the last sync saw, at
+ * `velocityAt`, which gives the acceleration of the body, and `braking` its horizontal part averaged
+ * over the last syncs, which tells where a sliding body stops. `offset` is how far the client was from
+ * the body when the last move went out, which the move takes away as it runs.
+ * `reach` is how far the shape reaches from its centre, which turns an angle into a distance.
  */
 struct Body {
 	JPH::BodyID id;
@@ -128,7 +141,14 @@ struct Body {
 	int objectid = -1;
 	Vector3 from = Vector3(0.0f);
 	Vector3 to = Vector3(0.0f);
+	Vector3 turnedFrom = Vector3(0.0f);
 	Vector3 rotation = Vector3(0.0f);
+	JPH::Quat heading = JPH::Quat::sIdentity();
+	JPH::Vec3 lastVelocity = JPH::Vec3::sZero();
+	JPH::Vec3 braking = JPH::Vec3::sZero();
+	double velocityAt = -1.0;
+	float offset = 0.0f;
+	float reach = 0.5f;
 	float syncError = 0.1f;
 	float speed = 0.0f;
 	double sentAt = 0.0;
@@ -173,8 +193,46 @@ struct Script {
 	IPawnScript* api = nullptr;
 };
 
+/**
+ * @brief      The shape `models.json` gives a model when it moves, `Collision` for the convex hull of
+ *             its collision.
+ */
+enum class ModelShape {
+	Collision,
+	Sphere,
+	Box,
+	Cylinder
+};
+
+/**
+ * @brief      What `models.json` says of a model, which `A3D_CreateObject` follows. A value left out
+ *             keeps the default of a moving object.
+ *
+ * The sizes are final: what the file leaves out was taken from the bounds of the model when it was
+ * read. `axis` is `0`, `1` or `2` for the X, Y or Z axis of a cylinder, and `offset` places the centre
+ * of the shape from the origin of the model.
+ */
+struct ModelSettings {
+	ModelShape shape = ModelShape::Collision;
+	float radius = 0.0f;
+	float height = 0.0f;
+	int axis = 2;
+	Vector3 size = Vector3(0.0f);
+	Vector3 offset = Vector3(0.0f);
+	std::optional<float> mass;
+	std::optional<float> friction;
+	std::optional<float> bounce;
+	std::optional<float> linearDamping;
+	std::optional<float> angularDamping;
+	std::optional<float> rollingFriction;
+	std::optional<float> buoyancy;
+	float drag = 1.0f;
+	std::optional<float> syncError;
+};
+
 struct Settings {
 	std::string database = "scriptfiles/3dandreas/world.db";
+	std::string models = "scriptfiles/3dandreas/models.json";
 	int threads = 2;
 	float rate = 60.0f;
 	float syncError = 0.1f;
@@ -184,6 +242,7 @@ struct Settings {
 	float contactDistance = 0.02f;
 	float drawDistance = 0.0f;
 	float floor = -100.0f;
+	float maxUpdates = 1000.0f;
 	bool vehicles = true;
 };
 
@@ -197,6 +256,8 @@ struct State {
 	IPlayerPool* players = nullptr;
 	std::mt19937 random;
 	std::unordered_map<int, Model> models;
+	std::unordered_map<int, ModelSettings> modelSettings;
+	std::unordered_map<int, ModelSettings> modelValues;
 	std::vector<Placement> placements;
 	std::vector<JPH::BodyID> placementBodies;
 	std::vector<uint8_t> placementRemoved;
@@ -224,12 +285,15 @@ struct State {
 	std::vector<int> floating;
 	std::vector<JPH::BodyID> playerBodies;
 	std::vector<int> playerWorlds;
+	std::vector<Vector3> playerSeen;
+	std::vector<double> playerSeenAt;
 	std::unordered_map<int, JPH::ShapeRefC> vehicleShapes;
 	std::vector<JPH::BodyID> vehicleBodies;
 	std::vector<int> vehicleModels;
 	std::vector<int> vehicleWorlds;
 	std::vector<Vector3> vehiclePositions;
 	std::vector<glm::quat> vehicleRotations;
+	std::vector<double> vehicleSeenAt;
 	std::vector<uint8_t> vehicleMoving;
 	std::vector<JPH::BodyID> actorBodies;
 	std::vector<int> actorWorlds;
@@ -243,6 +307,8 @@ struct State {
 	double accumulator = 0.0;
 	double now = 0.0;
 	uint64_t updates = 0;
+	double budget = 0.0;
+	double syncedAt = 0.0;
 	double milliseconds = 0.0;
 	int mapBodies = 0;
 };
@@ -275,6 +341,33 @@ void listen();
  *             - `false` the file is missing, truncated or of an unknown kind
  */
 bool loadDatabase(const std::string& path);
+
+/**
+ * @brief      Read what `models.json` says of each model, after the database, whose bounds give the
+ *             sizes the file leaves out. A wrong value is reported and skipped, and a model whose
+ *             shape cannot be made is left out.
+ *
+ * @param      path  Path of the file.
+ *
+ * @return     - the number of models read
+ *             - `-1` the file is missing
+ */
+int loadModelSettings(const std::string& path);
+
+/**
+ * @brief      What `models.json` says of a model, or `nullptr` when it says nothing.
+ */
+const ModelSettings* findModelSettings(int modelid);
+
+/**
+ * @brief      What `A3D_CreateObject` gives a model: the values of `models.json`, and for the ones it
+ *             leaves out an estimate from the model itself. The mass is the volume of the shape it
+ *             moves with times the density of what most of its collision is made of, and friction
+ *             and bounce are those of that material. Worked out once for each model.
+ *
+ * @param      shape  The shape the model moves with, from `dynamicShape`.
+ */
+const ModelSettings& modelValues(int modelid, const JPH::Shape& shape);
 
 /**
  * @brief      The surface of the game a part of a body is made of, `0` for the default surface.
@@ -352,10 +445,11 @@ bool mapHidden(uint32_t placement, int world);
 JPH::ShapeRefC staticShape(int modelid);
 
 /**
- * @brief      The shape a model collides with when it moves, a convex hull of its collision.
+ * @brief      The shape a model collides with when it moves: the sphere, box or cylinder
+ *             `models.json` gives it, or a convex hull of its collision.
  *
  * @return     - the shape
- *             - `nullptr` the model has no collision in the database
+ *             - `nullptr` the model has no collision in the database and no shape in `models.json`
  */
 JPH::ShapeRefC dynamicShape(int modelid);
 
@@ -399,12 +493,14 @@ JPH::ObjectLayer playerLayer();
 /**
  * @brief      Create a body and, for a moving body with a model, the object players see.
  *
- * @param      kind  `Kind::Object` for a moving body, `Kind::Static` or `Kind::Zone` for one that never moves.
+ * @param      kind   `Kind::Object` for a moving body, `Kind::Static` or `Kind::Zone` for one that never moves.
+ * @param      model  What `models.json` says of the model, whose friction, bounce, damping, rolling
+ *                    friction, buoyancy and sync error a moving body takes, or `nullptr`.
  *
  * @return     - the index of the body
  *             - `InvalidPhys` the world is full
  */
-int createBody(AMX* owner, const JPH::Shape* shape, int modelid, Vector3 position, JPH::QuatArg rotation, float mass, int world, Kind kind);
+int createBody(AMX* owner, const JPH::Shape* shape, int modelid, Vector3 position, JPH::QuatArg rotation, float mass, int world, Kind kind, const ModelSettings* model = nullptr);
 
 /**
  * @brief      Remove a body and the object it moves.
@@ -459,6 +555,18 @@ void removeActor(int actorid);
 JPH::ShapeRefC pedShape();
 
 /**
+ * @brief      Where a player or a vehicle is now, from the last position its client sent, carried on
+ *             by the velocity sent with it. Positions arrive every 30 ms or so while the simulation
+ *             steps every 17, so a body moved straight to them would jump and stand still in turn and
+ *             shove what it touches in pulses. The lead is held to `SyncLead` when packets stop.
+ *
+ * @param      position  The last position sent.
+ * @param      velocity  The velocity sent with it, in the units of the game.
+ * @param      since     Seconds since that position arrived.
+ */
+JPH::RVec3 carriedPosition(Vector3 position, Vector3 velocity, double since);
+
+/**
  * @brief      Advance the simulation by the time since the last tick, in fixed steps.
  *
  * @param      elapsed  Seconds since the last tick.
@@ -467,16 +575,32 @@ void step(double elapsed);
 
 /**
  * @brief      Send a new move to every moving object whose client position strayed from its body.
+ *
+ * At most `3dandreas.max_updates` moves go out a second, the objects furthest off first, so no number
+ * of objects floods a client. The move aims where the body will be after `3dandreas.sync_horizon`,
+ * along the fall of a body in free fall no further than its chord stays within the sync error, where
+ * a body sliding to a halt stops by the braking of the last syncs, or where its shape first meets
+ * something on the way, so the object players see never goes into a wall or the ground nor past where
+ * the body stops. A move that starts away from the body is given that distance to close before
+ * another goes out, and a body braking short of where the client heads gets a move at once. A
+ * move also goes out when the rotation the client turns to stops matching where the spin of the body
+ * takes it by the end of the move, by more than the sync error over the reach of the shape, the angle
+ * that moves its far end by that distance. A steady spin sends nothing more, and a bounce or a stop
+ * sends a move at once. The path between is the linear turn of the game. A body standing still gets
+ * its move within a tenth of a second, and a nudge of a few millimetres when it only turns, since a
+ * move that covers no distance takes no time on the client.
  */
 void syncBodies();
 
 /**
- * @brief      Put the object of a body that fell asleep exactly where the body rests.
+ * @brief      Bring the object of a body that fell asleep to where the body rests, with one short move
+ *             instead of a jump, or at once when only its rotation is off.
  */
 void syncRest(Body& body);
 
 /**
- * @brief      Move the object of a body to a new place at once.
+ * @brief      Put the object of a body where the body is at once, after a teleport or when a streamer
+ *             object takes over.
  */
 void syncTeleport(Body& body);
 

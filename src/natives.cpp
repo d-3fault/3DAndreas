@@ -6,6 +6,7 @@
 #include <Jolt/Physics/Collision/Shape/RotatedTranslatedShape.h>
 #include <Jolt/Physics/Collision/Shape/SphereShape.h>
 
+#include <algorithm>
 #include <cmath>
 
 namespace physics {
@@ -74,7 +75,12 @@ cell AMX_NATIVE_CALL A3D_CreateObject(AMX* amx, const cell* params) {
 	if (shape == nullptr) {
 		return InvalidPhys;
 	}
-	return createBody(amx, shape, params[1], readVector(params, 2), toJolt(readVector(params, 5)), readFloat(params, 8), params[9], Kind::Object);
+	const ModelSettings& model = modelValues(params[1], *shape);
+	float mass = readFloat(params, 8);
+	if (mass <= 0.0f) {
+		mass = model.mass.value_or(0.0f);
+	}
+	return createBody(amx, shape, params[1], readVector(params, 2), toJolt(readVector(params, 5)), mass, params[9], Kind::Object, &model);
 }
 
 cell AMX_NATIVE_CALL A3D_CreateSphere(AMX* amx, const cell* params) {
@@ -410,7 +416,7 @@ cell AMX_NATIVE_CALL A3D_AttachDynamicObject(AMX* amx, const cell* params) {
 	}
 	body->sync = Sync::Script;
 	body->objectid = params[2];
-	syncRest(*body);
+	syncTeleport(*body);
 	return true;
 }
 
@@ -439,7 +445,10 @@ cell AMX_NATIVE_CALL A3D_GetStats(AMX* amx, const cell* params) {
 	if (script == nullptr || script->GetAddr(params[1], &active) != AMX_ERR_NONE || script->GetAddr(params[2], &updates) != AMX_ERR_NONE) {
 		return false;
 	}
-	*active = cell(s.system->GetNumActiveBodies(JPH::EBodyType::RigidBody));
+	int players = int(std::count_if(s.playerBodies.begin(), s.playerBodies.end(), [](const JPH::BodyID& id) {
+		return !id.IsInvalid();
+	}));
+	*active = cell(s.system->GetNumActiveBodies(JPH::EBodyType::RigidBody)) - players;
 	*updates = cell(s.updates);
 	return writeFloat(amx, params[3], float(s.milliseconds));
 }
