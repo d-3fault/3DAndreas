@@ -5,6 +5,12 @@
 
 An open.mp component that simulates physics on the map of San Andreas with [Jolt Physics](https://github.com/jrouwe/JoltPhysics) and answers questions about that map: what a ray hits, where the ground is, whether two points see each other, what a shape overlaps, where the water lies and what a player has on screen. It loads from the `components` folder, is configured in `config.json` and reads the map from a database built from the files of the game.
 
+## Demo
+
+[![Physics demo of 3DAndreas on open.mp](https://img.youtube.com/vi/Szcq4VUscAc/maxresdefault.jpg)](https://youtu.be/Szcq4VUscAc)
+
+Physics objects moved by 3DAndreas, recorded in the game on an open.mp server. The picture opens the video on YouTube.
+
 ## Features
 
 - **Physics objects.** Spheres, boxes and objects shaped like a model fall, roll, bounce, float and push each other. Players see them as objects the component moves, with at most `max_updates` updates a second, so even a rain of hundreds of objects never floods a client. Static objects and zones never move and make walls, tables and goals.
