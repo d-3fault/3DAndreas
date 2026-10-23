@@ -21,7 +21,7 @@ Physics objects moved by 3DAndreas, recorded in the game on an open.mp server. T
 - **The screen.** Where a point of the world shows on the screen of a player, and what a point of the screen shows, in text draw units.
 - **Geometry.** The rotation that stands an object on a slope, reflections, offsets relative to objects and vehicles, the parts of a vehicle, and quaternions.
 - **Routes.** The fastest or shortest way by road, keeping to the one way streets of the game, or driving them both ways for the emergency services, on the roads the traffic drives, by boat and on foot. Each route is found in some tens of microseconds by contraction hierarchies, pays for its turns, and gives its points, turn by turn directions and the progress of a player along it. One search finds the nearest of many places by road.
-- **A GPS line.** A route shows on the radar and the map of a player as a line that moves on as they go, drawn with gang zones sent straight to their client, and the script hears when they arrive or stray.
+- **A GPS line.** A route shows on the radar and the map of a player as a line that moves on as they go, whole when it fits, drawn with gang zones sent straight to their client. The script hears when they arrive, stray, or come nearer the next turn.
 - **Walking anywhere.** An optional navigation mesh of the whole map, built with [Recast](https://github.com/recastnavigation/recastnavigation), tells where a pedestrian can walk: walks from a yard to a door, random spots that can be walked to, and whether a straight walk is clear.
 
 ## Compared with ColAndreas
@@ -143,15 +143,16 @@ public OnPlayerClickMap(playerid, Float:fX, Float:fY, Float:fZ) {
         Float:x,
         Float:y,
         Float:z,
-        Route:routeid
+        Route:routeid,
+        Route:shown = A3D_GetPlayerRoute(playerid)
     ;
 
     GetPlayerPos(playerid, x, y, z);
     routeid = A3D_FindRoute(x, y, z, fX, fY, fZ, IsPlayerInAnyVehicle(playerid) ? A3D_ROUTE_FASTEST : A3D_ROUTE_WALK);
 
     if (routeid != INVALID_ROUTE_ID) {
-        A3D_DestroyRoute(A3D_GetPlayerRoute(playerid));
         A3D_ShowRouteForPlayer(playerid, routeid);
+        A3D_DestroyRoute(shown);
     }
 
     return 1;
@@ -252,7 +253,7 @@ cmake -S . -B build -A Win32
 cmake --build build --config Release
 ```
 
-The component is written to `build/Release/3DAndreas.dll`, the database builder to `build/Release/phydb.exe` and the builder of the navigation mesh to `build/Release/navbuild.exe`. `routebench.exe` checks the hierarchies against A* and times them without a server. The server is 32 bit, so the component must be too.
+The component is written to `build/Release/3DAndreas.dll`, the database builder to `build/Release/phydb.exe` and the builder of the navigation mesh to `build/Release/navbuild.exe`. `routebench.exe` checks the hierarchies against A* and times them without a server, and `linetest.exe` checks how the line of a route is drawn. The server is 32 bit, so the component must be too.
 
 ## Tests
 
