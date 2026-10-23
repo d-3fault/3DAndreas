@@ -3,7 +3,7 @@
 > [!NOTE]
 > 3DAndreas is experimental and already runs in production. Its natives may still change from one version to the next. It was made with Claude Opus 5.5, a model by [Anthropic](https://www.anthropic.com).
 
-An open.mp component that simulates physics on the map of San Andreas with [Jolt Physics](https://github.com/jrouwe/JoltPhysics) and answers questions about that map: what a ray hits, where the ground is, whether two points see each other, what a shape overlaps, where the water lies and what a player has on screen. It loads from the `components` folder, is configured in `config.json` and reads the map from a database built from the files of the game.
+An open.mp component that simulates physics on the map of San Andreas with [Jolt Physics](https://github.com/jrouwe/JoltPhysics), answers questions about that map and finds routes across it: what a ray hits, where the ground is, whether two points see each other, what a shape overlaps, where the water lies, what a player has on screen, and the way to anywhere by road, by boat or on foot. It loads from the `components` folder, is configured in `config.json` and reads the map from a database built from the files of the game.
 
 ## Demo
 
@@ -20,6 +20,9 @@ Physics objects moved by 3DAndreas, recorded in the game on an open.mp server. T
 - **The map.** Water levels, points under water or inside the collision of the map, free spots on the ground, predicted throws, the size and the `object.dat` data of models, and building removal for every virtual world or for one.
 - **The screen.** Where a point of the world shows on the screen of a player, and what a point of the screen shows, in text draw units.
 - **Geometry.** The rotation that stands an object on a slope, reflections, offsets relative to objects and vehicles, the parts of a vehicle, and quaternions.
+- **Routes.** The fastest or shortest way by road, keeping to the one way streets of the game, or driving them both ways for the emergency services, on the roads the traffic drives, by boat and on foot. Each route is found in some tens of microseconds by contraction hierarchies, pays for its turns, and gives its points, turn by turn directions and the progress of a player along it. One search finds the nearest of many places by road.
+- **A GPS line.** A route shows on the radar and the map of a player as a line that moves on as they go, drawn with gang zones sent straight to their client, and the script hears when they arrive or stray.
+- **Walking anywhere.** An optional navigation mesh of the whole map, built with [Recast](https://github.com/recastnavigation/recastnavigation), tells where a pedestrian can walk: walks from a yard to a door, random spots that can be walked to, and whether a straight walk is clear.
 
 ## Compared with ColAndreas
 
@@ -38,6 +41,28 @@ The same queries on ColAndreas 1.5 and on 3DAndreas, measured with [`tests/colan
 ![Time of one query against ColAndreas](docs/bench/queries.svg)
 
 A bare server, with neither of them, is ready in 0.25 s and uses 51 MB. When rays stop at the water, as they do in ColAndreas, 113 of 120 ground heights across the map are identical and the other 7 lie within 5 mm.
+
+## Routes
+
+![Fastest routes across San Andreas](docs/routes/routes.png)
+
+The roads and the paths of the game, from its `nodes*.dat` files, become a network of 2,304 junctions for the roads and 10,913 for the paths and roads on foot. When the server starts, a contraction hierarchy is built for each type of route on threads of their own, in about a second. A route then climbs from both ends to meet in the middle, and costs tens of microseconds across the whole map, inside the native that asks, with no thread or callback.
+
+The same five routes found with [samp-gps-plugin](https://github.com/AmyrAhmady/samp-gps-plugin) 1.4.1 and with 3DAndreas, on the same server, with [`tests/compare.pwn`](tests/compare.pwn):
+
+| Route | Plugin, nearest nodes and path | 3DAndreas, route with its points | 3DAndreas, length only |
+| --- | --- | --- | --- |
+| Grove Street to the Doherty garage | 16.8 ms | 48 µs | 14 µs |
+| The Doherty garage to Four Dragons | 14.8 ms | 30 µs | 10 µs |
+| Four Dragons to Angel Pine | 17.0 ms | 50 µs | 18 µs |
+| Angel Pine to the Market | 13.3 ms | 30 µs | 8 µs |
+| The Market to Grove Street | 12.8 ms | 29 µs | 16 µs |
+
+Most of the time of the plugin goes to finding the node nearest to each end, 6.2 ms each. The routes of 3DAndreas also keep to the 11,524 one way links the game marks, where the file of the plugin marks 961, and start on the road beside each point rather than at the nearest node.
+
+![A walk from All Saints to County General on the navigation mesh](docs/routes/walk.png)
+
+A walk from All Saints to County General: from the door of one hospital to the street on the navigation mesh, along the paths of the game, and across the forecourt of the other. [`examples/gps.pwn`](examples/gps.pwn) is a filterscript that makes a GPS of the routes. The [Routes](https://github.com/imshooter/3DAndreas/wiki/Routes) and [Navigation mesh](https://github.com/imshooter/3DAndreas/wiki/Navigation-Mesh) pages of the wiki tell more.
 
 ## Cost on the server
 
@@ -72,7 +97,7 @@ The numbers change by about a fifth from one session to another on the same comp
 ## Installation
 
 1. Download the latest release from [Releases](https://github.com/imshooter/3DAndreas/releases).
-2. Extract it into the folder of the server. It holds `components/3DAndreas.dll`, `qawno/include/3DAndreas.inc`, `scriptfiles/3dandreas/world.db` and `scriptfiles/3dandreas/models.json`.
+2. Extract it into the folder of the server. It holds `components/3DAndreas.dll`, `qawno/include/3DAndreas.inc`, `scriptfiles/3dandreas/world.db`, `scriptfiles/3dandreas/models.json` and `scriptfiles/3dandreas/navmesh.db`. The navigation mesh is optional and takes about 65 MB of memory, and the routes about 30 MB.
 3. Add `#include <3DAndreas>` to the scripts that use it, after `streamer.inc` when the script shows physics objects with streamer objects.
 
 Tested with open.mp 1.6.7 on Windows. Only a Windows build is available for now.
@@ -110,7 +135,37 @@ public A3D_OnStopped(Physic:physicid, Float:x, Float:y, Float:z) {
 }
 ```
 
-Every native, callback and setting is described in the [wiki](https://github.com/imshooter/3DAndreas/wiki). [`examples/playground.pwn`](examples/playground.pwn) is a filterscript with a command for each kind of feature.
+A route to the place a player marks on the map, shown on their radar:
+
+```pawn
+public OnPlayerClickMap(playerid, Float:fX, Float:fY, Float:fZ) {
+    new
+        Float:x,
+        Float:y,
+        Float:z,
+        Route:routeid
+    ;
+
+    GetPlayerPos(playerid, x, y, z);
+    routeid = A3D_FindRoute(x, y, z, fX, fY, fZ, IsPlayerInAnyVehicle(playerid) ? A3D_ROUTE_FASTEST : A3D_ROUTE_WALK);
+
+    if (routeid != INVALID_ROUTE_ID) {
+        A3D_DestroyRoute(A3D_GetPlayerRoute(playerid));
+        A3D_ShowRouteForPlayer(playerid, routeid);
+    }
+
+    return 1;
+}
+
+public A3D_OnRouteArrived(playerid, Route:routeid) {
+    A3D_DestroyRoute(routeid);
+    GameTextForPlayer(playerid, "~g~You arrived", 3000, 3);
+
+    return 1;
+}
+```
+
+Every native, callback and setting is described in the [wiki](https://github.com/imshooter/3DAndreas/wiki). [`examples/playground.pwn`](examples/playground.pwn) is a filterscript with a command for each kind of feature, and [`examples/gps.pwn`](examples/gps.pwn) a GPS with turn by turn directions.
 
 ## Configuration
 
@@ -120,6 +175,7 @@ Every setting is optional. These are the defaults:
 "3dandreas": {
     "database": "scriptfiles/3dandreas/world.db",
     "models": "scriptfiles/3dandreas/models.json",
+    "navmesh": "scriptfiles/3dandreas/navmesh.db",
     "threads": 2,
     "rate": 60.0,
     "sync_error": 0.1,
@@ -138,6 +194,7 @@ Every setting is optional. These are the defaults:
 | --- | --- |
 | `database` | Map database, relative to the server. When the default file is missing, `scriptfiles/colandreas/ColAndreas.cadb` is read instead. |
 | `models` | Model settings, relative to the server. A missing file leaves every model with the collision of the game. |
+| `navmesh` | Navigation mesh, relative to the server. A missing file leaves walks on the paths of the game. |
 | `threads` | Worker threads of the simulation. `0` runs it on the thread of the server. |
 | `rate` | Simulation steps per second, at least `10`. |
 | `sync_error` | Distance in metres the object players see may stray from its body, or its far end may turn away, before a new move is sent. |
@@ -172,24 +229,30 @@ A model the file leaves out keeps the collision of the game. Its mass is its vol
 
 ## Map database
 
-`world.db` holds the collision of every model of the game with the surface of each part, the map objects with their interiors, the water, the surfaces of `surfinfo.dat` and the `object.dat` data of the objects that can be knocked over. The release ships one built from GTA San Andreas and the models SA-MP adds. `phydb`, built with the component, makes it again from a game folder, and the file goes to `scriptfiles/3dandreas`:
+`world.db` holds the collision of every model of the game with the surface of each part, the map objects with their interiors, the water, the surfaces of `surfinfo.dat`, the `object.dat` data of the objects that can be knocked over, and the roads and paths of `nodes*.dat` with their lanes. The release ships one built from GTA San Andreas and the models SA-MP adds. `phydb`, built with the component, makes it again from a game folder, and the file goes to `scriptfiles/3dandreas`:
 
 ```
 phydb "C:\Games\GTA San Andreas" world.db
 ```
 
-`--no-samp` after the output leaves out the models of the SA-MP client. A ColAndreas database still loads as a fallback, without surfaces, water and model data.
+`--no-samp` after the output leaves out the models of the SA-MP client. A ColAndreas database still loads as a fallback, without surfaces, water, model data and routes.
+
+`navbuild` makes the navigation mesh from the database, in about a minute on four threads:
+
+```
+navbuild world.db navmesh.db --threads 4
+```
 
 ## Building
 
-Windows with Visual Studio 2022 or its Build Tools, and CMake 3.19 or later. CMake fetches the open.mp SDK, the Pawn headers and Jolt Physics.
+Windows with Visual Studio 2022 or its Build Tools, and CMake 3.19 or later. CMake fetches the open.mp SDK, the Pawn headers, Jolt Physics, and Recast and Detour.
 
 ```
 cmake -S . -B build -A Win32
 cmake --build build --config Release
 ```
 
-The component is written to `build/Release/3DAndreas.dll` and the database builder to `build/Release/phydb.exe`. The server is 32 bit, so the component must be too.
+The component is written to `build/Release/3DAndreas.dll`, the database builder to `build/Release/phydb.exe` and the builder of the navigation mesh to `build/Release/navbuild.exe`. `routebench.exe` checks the hierarchies against A* and times them without a server. The server is 32 bit, so the component must be too.
 
 ## Tests
 
@@ -208,6 +271,9 @@ The scripts in [`tests`](tests) run as the main script, print what they check an
 | [`probes.pwn`](tests/probes.pwn) | Actors, sight in searches, points inside the map, free spots, throws, offsets, vehicle parts and the screen. |
 | [`stress.pwn`](tests/stress.pwn) | Four load scenarios, picked with `PHYBENCH_SCENARIO=1` to `4` and sized with `PHYBENCH_COUNT` on the pawncc command line. |
 | [`colandreas.pwn`](tests/colandreas.pwn) | The comparison above. Compiled with `BENCH_COLANDREAS` defined, it runs the same queries on ColAndreas. |
+| [`routes.pwn`](tests/routes.pwn) | Routes of every type, their points, turns and progress, measures, the nearest place by road, ids that do not exist and the cost of each native. |
+| [`walks.pwn`](tests/walks.pwn) | The navigation mesh: walk points, random points, straight walks and walks. Needs `navmesh.db`. |
+| [`compare.pwn`](tests/compare.pwn) | The comparison of routes above. Needs samp-gps-plugin with its `GPS.dat`, and its `INVALID_PATH_ID` renamed, as it clashes with open.mp. |
 
 ## Thanks to
 
@@ -215,7 +281,8 @@ The scripts in [`tests`](tests) run as the main script, print what they check an
 - [@openmultiplayer](https://github.com/openmultiplayer) for the [SDK](https://github.com/openmultiplayer/open.mp-sdk) and the [Pawn compiler](https://github.com/openmultiplayer/compiler).
 - [@Pottus](https://github.com/Pottus) and the contributors of [ColAndreas](https://github.com/Pottus/ColAndreas), whose database the component still reads.
 - [@AbyssMorgan](https://github.com/AbyssMorgan) for 3DTryg, whose functions inspired the probes, the offsets and the screen natives.
+- [@memononen](https://github.com/memononen) and the contributors of [Recast and Detour](https://github.com/recastnavigation/recastnavigation), which build the navigation mesh and find walks on it.
 
 ## License
 
-Released under the [MIT License](LICENSE). Jolt Physics keeps its own MIT license, which the release ships as `LICENSE-Jolt.txt`.
+Released under the [MIT License](LICENSE). Jolt Physics keeps its own MIT license and Recast and Detour their zlib license, which the release ships as `LICENSE-Jolt.txt` and `LICENSE-Recast.txt`.
