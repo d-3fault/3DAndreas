@@ -250,6 +250,10 @@ struct Route {
 /**
  * @brief      A gang zone of the line of a route on the map of a player: where along the route it
  *             stands, in steps of the width of the line, the client id it was given and its size.
+ *
+ * The client id is taken in the gang zone data of the player, which `reserveClientID` only finds and
+ * `setClientID` takes. It is set to `RouteSquareZone`, since no gang zone of the server has that id:
+ * theirs count from 1, 0 marks a free client id and -1 an invalid one.
  */
 struct RouteSquare {
 	int64_t key = 0;

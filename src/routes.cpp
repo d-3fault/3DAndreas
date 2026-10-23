@@ -22,6 +22,7 @@ constexpr double DisplayInterval = 0.2;
 constexpr int MaxSquares = 512;
 constexpr int ShowGangZoneRPC = 108;
 constexpr int HideGangZoneRPC = 120;
+constexpr int RouteSquareZone = -2;
 constexpr float SlightTurn = 60.0f;
 constexpr float SharpTurn = 120.0f;
 constexpr float BackTurn = 160.0f;
@@ -293,6 +294,7 @@ void draw(IPlayer& player, RouteDisplay& display, const Route& route) {
 		if (clientid == INVALID_GANG_ZONE_ID) {
 			break;
 		}
+		data->setClientID(clientid, RouteSquareZone);
 		square.clientid = clientid;
 		sendShow(player, clientid, pointAlong(route, float(square.key) * step), square.size, display.colour);
 		shown.push_back(square);
