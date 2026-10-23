@@ -12,7 +12,8 @@ namespace physics {
 namespace {
 
 constexpr char Magic[4] = { 'P', 'H', 'D', 'B' };
-constexpr uint32_t Version = 1;
+constexpr uint32_t Version = 2;
+constexpr uint32_t FirstVersion = 1;
 constexpr uint16_t ColAndreasVersion = 2;
 
 class Reader {
@@ -68,6 +69,54 @@ private:
 	std::vector<char> data_;
 };
 
+bool readGraph(Reader& reader, PathGraph& graph) {
+	uint32_t nodes;
+	uint32_t links;
+	if (!reader.read(nodes) || !reader.read(links)) {
+		return false;
+	}
+	graph.nodes.resize(nodes);
+	graph.first.resize(size_t(nodes) + 1);
+	graph.links.resize(links);
+	for (PathNode& node : graph.nodes) {
+		if (!reader.read(node.x) || !reader.read(node.y) || !reader.read(node.z) || !reader.read(node.flags) || !reader.read(node.width)) {
+			return false;
+		}
+	}
+	for (uint32_t& first : graph.first) {
+		if (!reader.read(first) || first > links) {
+			return false;
+		}
+	}
+	for (PathLink& link : graph.links) {
+		if (!reader.read(link.target) || !reader.read(link.length) || !reader.read(link.lanes) || !reader.read(link.flags) || link.target >= nodes) {
+			return false;
+		}
+	}
+	return true;
+}
+
+void writeGraph(Writer& writer, const PathGraph& graph) {
+	writer.write(uint32_t(graph.nodes.size()));
+	writer.write(uint32_t(graph.links.size()));
+	for (const PathNode& node : graph.nodes) {
+		writer.write(node.x);
+		writer.write(node.y);
+		writer.write(node.z);
+		writer.write(node.flags);
+		writer.write(node.width);
+	}
+	for (size_t index = 0; index != graph.nodes.size() + 1; ++index) {
+		writer.write(index < graph.first.size() ? graph.first[index] : uint32_t(graph.links.size()));
+	}
+	for (const PathLink& link : graph.links) {
+		writer.write(link.target);
+		writer.write(link.length);
+		writer.write(link.lanes);
+		writer.write(link.flags);
+	}
+}
+
 bool readFile(const std::string& path, std::vector<char>& data) {
 	std::ifstream file(path, std::ios::binary);
 	if (!file) {
@@ -119,7 +168,7 @@ bool readOwn(Reader& reader, Database& database) {
 	uint32_t models;
 	uint32_t placements;
 	uint32_t waters;
-	if (!reader.read(version) || version != Version) {
+	if (!reader.read(version) || (version != Version && version != FirstVersion)) {
 		return false;
 	}
 	if (!reader.read(surfaces) || !reader.read(models) || !reader.read(placements) || !reader.read(waters)) {
@@ -202,7 +251,10 @@ bool readOwn(Reader& reader, Database& database) {
 		}
 		water.corners = corners;
 	}
-	return true;
+	if (version == FirstVersion) {
+		return true;
+	}
+	return readGraph(reader, database.roads) && readGraph(reader, database.walks);
 }
 
 bool readColAndreas(Reader& reader, Database& database) {
@@ -473,6 +525,8 @@ bool writeDatabase(const std::string& path, const Database& database) {
 		writer.write(water.y);
 		writer.write(water.z);
 	}
+	writeGraph(writer, database.roads);
+	writeGraph(writer, database.walks);
 	std::ofstream file(path, std::ios::binary | std::ios::trunc);
 	if (!file) {
 		return false;

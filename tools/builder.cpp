@@ -510,6 +510,178 @@ std::vector<std::string> listed(const std::filesystem::path& path, const std::st
 	return files;
 }
 
+constexpr int PathAreas = 64;
+constexpr uint32_t GameBoats = 1u << 7;
+constexpr uint32_t GameSwitchedOff = 1u << 5;
+constexpr uint32_t GameHighway = 1u << 13;
+
+struct GameNode {
+	float x = 0.0f;
+	float y = 0.0f;
+	float z = 0.0f;
+	uint16_t link = 0;
+	uint8_t width = 0;
+	uint32_t flags = 0;
+};
+
+struct GameNavi {
+	float dx = 0.0f;
+	float dy = 0.0f;
+	uint8_t left = 0;
+	uint8_t right = 0;
+};
+
+struct GameArea {
+	uint32_t vehicles = 0;
+	std::vector<GameNode> nodes;
+	std::vector<GameNavi> navis;
+	std::vector<std::pair<uint16_t, uint16_t>> links;
+	std::vector<uint16_t> naviLinks;
+	std::vector<uint8_t> crossings;
+};
+
+bool readPathArea(const std::vector<char>& data, GameArea& area) {
+	uint32_t nodes;
+	uint32_t vehicles;
+	uint32_t peds;
+	uint32_t navis;
+	uint32_t links;
+	if (!take(data, 0, nodes) || !take(data, 4, vehicles) || !take(data, 8, peds) || !take(data, 12, navis) || !take(data, 16, links)) {
+		return false;
+	}
+	size_t at = 20;
+	size_t needed = at + size_t(nodes) * 28 + size_t(navis) * 14 + size_t(links) * 4 + 768 + size_t(links) * 4;
+	if (needed > data.size() || vehicles > nodes) {
+		return false;
+	}
+	area.vehicles = vehicles;
+	area.nodes.resize(nodes);
+	for (GameNode& node : area.nodes) {
+		int16_t position[3];
+		take(data, at + 8, position);
+		take(data, at + 16, node.link);
+		take(data, at + 22, node.width);
+		take(data, at + 24, node.flags);
+		node.x = position[0] / 8.0f;
+		node.y = position[1] / 8.0f;
+		node.z = position[2] / 8.0f;
+		at += 28;
+	}
+	area.navis.resize(navis);
+	for (GameNavi& navi : area.navis) {
+		int8_t direction[2];
+		uint32_t flags;
+		take(data, at + 8, direction);
+		take(data, at + 10, flags);
+		navi.dx = direction[0] / 100.0f;
+		navi.dy = direction[1] / 100.0f;
+		navi.left = uint8_t((flags >> 8) & 7);
+		navi.right = uint8_t((flags >> 11) & 7);
+		at += 14;
+	}
+	area.links.resize(links);
+	for (auto& link : area.links) {
+		take(data, at, link.first);
+		take(data, at + 2, link.second);
+		at += 4;
+	}
+	at += 768;
+	area.naviLinks.resize(links);
+	for (uint16_t& navi : area.naviLinks) {
+		take(data, at, navi);
+		at += 2;
+	}
+	at += links;
+	area.crossings.resize(links);
+	for (uint8_t& crossing : area.crossings) {
+		take(data, at, crossing);
+		at += 1;
+	}
+	return true;
+}
+
+bool readPaths(const std::vector<Archive>& archives, Database& database) {
+	std::vector<GameArea> areas(PathAreas);
+	for (int index = 0; index != PathAreas; ++index) {
+		std::string name = "nodes" + std::to_string(index) + ".dat";
+		const Archive* holder = nullptr;
+		for (const Archive& archive : archives) {
+			if (archive.byName.count(name) != 0) {
+				holder = &archive;
+				break;
+			}
+		}
+		if (holder == nullptr || !readPathArea(readEntry(*holder, holder->byName.at(name)), areas[index])) {
+			return false;
+		}
+	}
+	std::vector<uint32_t> roadBase(PathAreas + 1, 0);
+	std::vector<uint32_t> walkBase(PathAreas + 1, 0);
+	for (int index = 0; index != PathAreas; ++index) {
+		roadBase[index + 1] = roadBase[index] + areas[index].vehicles;
+		walkBase[index + 1] = walkBase[index] + uint32_t(areas[index].nodes.size()) - areas[index].vehicles;
+	}
+	auto convert = [](uint32_t flags) {
+		uint8_t converted = 0;
+		converted |= (flags & GameHighway) != 0 ? PathHighway : 0;
+		converted |= (flags & GameSwitchedOff) != 0 ? PathNoTraffic : 0;
+		converted |= (flags & GameBoats) != 0 ? PathBoat : 0;
+		return converted;
+	};
+	for (PathGraph* graph : { &database.roads, &database.walks }) {
+		graph->nodes.clear();
+		graph->first.clear();
+		graph->links.clear();
+	}
+	for (int index = 0; index != PathAreas; ++index) {
+		const GameArea& area = areas[index];
+		for (uint32_t node = 0; node != uint32_t(area.nodes.size()); ++node) {
+			const GameNode& game = area.nodes[node];
+			bool vehicle = node < area.vehicles;
+			PathGraph& graph = vehicle ? database.roads : database.walks;
+			PathNode path;
+			path.x = game.x;
+			path.y = game.y;
+			path.z = game.z;
+			path.flags = convert(game.flags);
+			path.width = game.width;
+			graph.first.push_back(uint32_t(graph.links.size()));
+			graph.nodes.push_back(path);
+			uint32_t count = game.flags & 15;
+			for (uint32_t slot = game.link; slot != game.link + count && slot < area.links.size(); ++slot) {
+				uint16_t targetArea = area.links[slot].first;
+				uint16_t targetNode = area.links[slot].second;
+				if (targetArea >= PathAreas || targetNode >= areas[targetArea].nodes.size() || (targetNode < areas[targetArea].vehicles) != vehicle) {
+					continue;
+				}
+				const GameNode& other = areas[targetArea].nodes[targetNode];
+				PathLink link;
+				link.target = vehicle ? roadBase[targetArea] + targetNode : walkBase[targetArea] + targetNode - areas[targetArea].vehicles;
+				link.length = std::sqrt((other.x - game.x) * (other.x - game.x) + (other.y - game.y) * (other.y - game.y) + (other.z - game.z) * (other.z - game.z));
+				link.lanes = 1;
+				if (vehicle) {
+					uint16_t naviArea = area.naviLinks[slot] >> 10;
+					uint16_t naviIndex = area.naviLinks[slot] & 1023;
+					if (naviArea < PathAreas && naviIndex < areas[naviArea].navis.size()) {
+						const GameNavi& navi = areas[naviArea].navis[naviIndex];
+						float along = (other.x - game.x) * navi.dx + (other.y - game.y) * navi.dy;
+						if (navi.left != 0 || navi.right != 0) {
+							link.lanes = along > 0.0f ? navi.left : navi.right;
+						}
+					}
+				} else {
+					link.flags |= (area.crossings[slot] & 1) != 0 ? PathCrossing : 0;
+					link.flags |= (area.crossings[slot] & 2) != 0 ? PathLights : 0;
+				}
+				graph.links.push_back(link);
+			}
+		}
+	}
+	database.roads.first.push_back(uint32_t(database.roads.links.size()));
+	database.walks.first.push_back(uint32_t(database.walks.links.size()));
+	return true;
+}
+
 }
 
 int main(int argc, char** argv) {
@@ -644,6 +816,10 @@ int main(int argc, char** argv) {
 		database.placements.push_back(placement);
 	}
 
+	if (!readPaths(archives, database)) {
+		std::printf("cannot read the paths nodes0.dat to nodes63.dat\n");
+		return 1;
+	}
 	readSurfaces(resolve(game, "data/surfinfo.dat"), database.surfaces);
 	readWater(resolve(game, "data/water.dat"), database.waters);
 
@@ -663,6 +839,7 @@ int main(int argc, char** argv) {
 	std::printf("%zu models (%zu dynamic, %zu without collision) from %d collision files, %d unnamed\n", database.models.size(), dynamicModels, empty, collisionFiles, unnamed);
 	std::printf("%zu faces and %zu vertices kept of %zu and %zu, %zu faces without area or given twice\n", faces, vertices, readFaces, readVertices, droppedFaces);
 	std::printf("%zu placements of %zu read (%d streams, %zu of models without collision), %zu water polygons, %zu surfaces\n", database.placements.size(), placements.size(), streams, withoutCollision, database.waters.size(), database.surfaces.size());
+	std::printf("%zu road nodes and %zu links, %zu walk nodes and %zu links\n", database.roads.nodes.size(), database.roads.links.size(), database.walks.nodes.size(), database.walks.links.size());
 	std::printf("%s written in %.2f s, %ju bytes\n", output.c_str(), seconds, uintmax_t(std::filesystem::file_size(output)));
 	return 0;
 }

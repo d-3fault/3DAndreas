@@ -137,8 +137,68 @@ struct Water {
 };
 
 /**
+ * @brief      The node is on a highway, where the traffic of the game drives fastest.
+ */
+constexpr uint8_t PathHighway = 1;
+
+/**
+ * @brief      The node is switched off, so the traffic of the game does not drive there: dirt roads,
+ *             tracks, alleys and the ends of drives and car parks.
+ */
+constexpr uint8_t PathNoTraffic = 2;
+
+/**
+ * @brief      The node is on a lane for boats.
+ */
+constexpr uint8_t PathBoat = 4;
+
+/**
+ * @brief      The link crosses a road, for pedestrians.
+ */
+constexpr uint8_t PathCrossing = 1;
+
+/**
+ * @brief      The crossing has traffic lights.
+ */
+constexpr uint8_t PathLights = 2;
+
+/**
+ * @brief      A node of the paths of the game, where vehicles drive or pedestrians walk.
+ */
+struct PathNode {
+	float x = 0.0f;
+	float y = 0.0f;
+	float z = 0.0f;
+	uint8_t flags = 0;
+	uint8_t width = 0;
+};
+
+/**
+ * @brief      A link from a node to the next. `lanes` is how many lanes go that way, `0` when the road
+ *             is one way in the other direction.
+ */
+struct PathLink {
+	uint32_t target = 0;
+	float length = 0.0f;
+	uint8_t lanes = 0;
+	uint8_t flags = 0;
+};
+
+/**
+ * @brief      A graph of path nodes. The links of node `n` go from `first[n]` to `first[n + 1]`.
+ */
+struct PathGraph {
+	std::vector<PathNode> nodes;
+	std::vector<uint32_t> first;
+	std::vector<PathLink> links;
+};
+
+/**
  * @brief      Everything a database holds. `colAndreas` tells that it was read from a ColAndreas
  *             database.
+ *
+ * `roads` holds the paths vehicles drive and `walks` the paths pedestrians walk. A database of the
+ * first version and a ColAndreas database have neither.
  */
 struct Database {
 	bool colAndreas = false;
@@ -146,6 +206,8 @@ struct Database {
 	std::unordered_map<int, Model> models;
 	std::vector<Placement> placements;
 	std::vector<Water> waters;
+	PathGraph roads;
+	PathGraph walks;
 };
 
 /**
