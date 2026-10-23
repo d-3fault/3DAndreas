@@ -4,6 +4,7 @@
 #include "routing.hpp"
 
 #include <atomic>
+#include <chrono>
 #include <condition_variable>
 #include <mutex>
 #include <string>
@@ -43,6 +44,11 @@ public:
 	 * @brief      Whether the file was read, without waiting.
 	 */
 	bool ready() const;
+
+	/**
+	 * @brief      When the file was read, once `ready` says so.
+	 */
+	std::chrono::steady_clock::time_point readyAt() const;
 
 	/**
 	 * @brief      Whether there is a mesh, after waiting for the file to be read.
@@ -93,6 +99,7 @@ private:
 	size_t bytes_ = 0;
 	std::thread worker_;
 	std::atomic<bool> done_{ false };
+	std::atomic<std::chrono::steady_clock::rep> readyAt_{ 0 };
 	bool started_ = false;
 	mutable std::mutex mutex_;
 	mutable std::condition_variable changed_;

@@ -54,6 +54,7 @@ void WalkMesh::clear() {
 	bytes_ = 0;
 	started_ = false;
 	done_.store(false);
+	readyAt_.store(0);
 }
 
 void WalkMesh::load(const std::string& path) {
@@ -102,6 +103,7 @@ void WalkMesh::load(const std::string& path) {
 			}
 		}
 		dtFreeNavMesh(mesh);
+		readyAt_.store(std::chrono::steady_clock::now().time_since_epoch().count(), std::memory_order_relaxed);
 		{
 			std::lock_guard<std::mutex> lock(mutex_);
 			done_.store(true, std::memory_order_release);
@@ -112,6 +114,10 @@ void WalkMesh::load(const std::string& path) {
 
 bool WalkMesh::ready() const {
 	return done_.load(std::memory_order_acquire);
+}
+
+std::chrono::steady_clock::time_point WalkMesh::readyAt() const {
+	return std::chrono::steady_clock::time_point(std::chrono::steady_clock::duration(readyAt_.load(std::memory_order_relaxed)));
 }
 
 bool WalkMesh::loaded() const {

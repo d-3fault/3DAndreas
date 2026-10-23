@@ -25,6 +25,7 @@
 #include <Server/Components/Vehicles/vehicles.hpp>
 
 #include "database.hpp"
+#include "routeline.hpp"
 #include "routing.hpp"
 #include "walkmesh.hpp"
 
@@ -248,24 +249,15 @@ struct Route {
 };
 
 /**
- * @brief      A gang zone of the line of a route on the map of a player: where along the route it
- *             stands, in steps of the width of the line, the client id it was given and its size.
- *
- * The client id is taken in the gang zone data of the player, which `reserveClientID` only finds and
- * `setClientID` takes. It is set to `RouteSquareZone`, since no gang zone of the server has that id:
- * theirs count from 1, 0 marks a free client id and -1 an invalid one.
- */
-struct RouteSquare {
-	int64_t key = 0;
-	int clientid = -1;
-	float size = 0.0f;
-};
-
-/**
  * @brief      A route shown on the map of a player as a line of gang zones that moves on as the player
  *             goes. `colour` is ready to send, `position` is how far along the route the player is and
- *             `segment` the segment they are on, and `strayed` and `arrived` keep each event from
- *             repeating.
+ *             `segment` the segment they are on, `turn` and `step` the next turn and the distance to
+ *             it in steps last told to the script, `closest` the nearest the player has been to the
+ *             route, and `strayed` and `arrived` keep each event from repeating.
+ *
+ * Each square in `shown` holds a client id taken in the gang zone data of the player, which
+ * `reserveClientID` only finds and `setClientID` takes. It is set to `RouteSquareZone`, since no gang
+ * zone of the server has that id: theirs count from 1, 0 marks a free client id and -1 an invalid one.
  */
 struct RouteDisplay {
 	int route = -1;
@@ -274,7 +266,10 @@ struct RouteDisplay {
 	int squares = 0;
 	float position = 0.0f;
 	uint32_t segment = 0;
-	std::vector<RouteSquare> shown;
+	int turn = -1;
+	int step = -1;
+	float closest = 0.0f;
+	std::vector<LineSquare> shown;
 	bool strayed = false;
 	bool arrived = false;
 };
@@ -816,7 +811,8 @@ void removeRoutePlayer(int playerid);
 
 /**
  * @brief      Tell when the route networks are ready, and follow the players who are shown a route:
- *             move its line on ahead of them, and call `A3D_OnRouteArrived` and `A3D_OnRouteLeft`.
+ *             move its line on ahead of them, and call `A3D_OnRouteArrived`, `A3D_OnRouteLeft` and
+ *             `A3D_OnRouteAdvanced`.
  */
 void updateRoutes();
 

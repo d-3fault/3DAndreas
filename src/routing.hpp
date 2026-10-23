@@ -4,6 +4,7 @@
 
 #include <array>
 #include <atomic>
+#include <chrono>
 #include <condition_variable>
 #include <cstdint>
 #include <functional>
@@ -137,6 +138,11 @@ public:
 	 * @brief      Whether the network is built and every hierarchy contracted, without waiting.
 	 */
 	bool ready() const;
+
+	/**
+	 * @brief      When the network was built and every hierarchy contracted, once `ready` says so.
+	 */
+	std::chrono::steady_clock::time_point readyAt() const;
 
 	/**
 	 * @brief      Whether the network has a chain a type of route can use.
@@ -334,6 +340,7 @@ private:
 	std::thread worker_;
 	std::atomic<bool> stopping_{ false };
 	std::atomic<bool> built_{ false };
+	std::atomic<std::chrono::steady_clock::rep> readyAt_{ 0 };
 	bool started_ = false;
 	mutable std::mutex mutex_;
 	mutable std::condition_variable changed_;

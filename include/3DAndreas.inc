@@ -1833,16 +1833,23 @@ native bool:A3D_GetNearestPathPoint(Float:x, Float:y, Float:z, &Float:pathX, &Fl
  *
  * The line is made of gang zones sent straight to the client of the player. They are not gang zones
  * of the server, so they take no memory or id there, only room among the 1024 gang zones the client
- * shows. Half of them draw the route ahead of the player without a gap, and the rest mark the way
- * beyond as dots. A player is shown one route at a time.
- * `A3D_OnRouteArrived` and `A3D_OnRouteLeft` tell the script that found the route when the player
- * reaches its end or strays from it.
+ * shows. The line from the player to the end is whole when it takes no more than `squares` gang
+ * zones as wide as the line. Otherwise half of them draw the route ahead of the player without a
+ * gap, and the rest mark the way beyond as dots, down to a dot at the end. Only the gang zones that
+ * change are sent as the player goes.
+ *
+ * A player is shown one route at a time. A route shown in place of another of the same colour and
+ * width keeps the gang zones of the way the two share, so a route found again from where the player
+ * strayed sends little. Show the new route before destroying the old one, or the line is sent whole
+ * again. `A3D_OnRouteArrived`, `A3D_OnRouteLeft` and `A3D_OnRouteAdvanced` tell the script that found
+ * the route when the player reaches its end, strays from it or moves along it.
  *
  * @param      playerid  Player to show the route to.
  * @param      routeid   Route to show.
  * @param      colour    Colour of the line, as `0xRRGGBBAA`.
  * @param      width     Width of the line, in metres.
- * @param      squares   Most gang zones the line may use, up to `512`.
+ * @param      squares   Most gang zones the line may use, up to `512`. With a width of 8 metres, 128
+ *                       draw a whole line a kilometre long and 512 four kilometres long.
  *
  * @return     - `true` the route is shown
  *             - `false` the player or the route does not exist
@@ -2032,14 +2039,34 @@ forward A3D_OnLeft(Physic:zoneid, Physic:physicid);
 forward A3D_OnRouteArrived(playerid, Route:routeid);
 
 /**
- * @brief      A player strayed more than 30 metres from the route shown to them. It is not called
- *             again until they come back within 15 metres.
+ * @brief      A player strayed from the route shown to them.
+ *
+ * A player strays when they are 30 metres farther from the route than the nearest they have been to
+ * it, so a route shown to a player who is away from it, as in a car park beside the road, waits
+ * until they move off. It is not called again until they come back within 15 metres of that
+ * distance.
  *
  * @param      playerid  Player who strayed.
  * @param      routeid   Route they left.
  * @param      distance  Distance from the player to the route.
  */
 forward A3D_OnRouteLeft(playerid, Route:routeid, Float:distance);
+
+/**
+ * @brief      A player moved along the route shown to them: the next turn or the distance to it
+ *             changed.
+ *
+ * It comes at most five times a second, when the next turn changes or the distance to it passes a
+ * multiple of ten metres, and not while the player is away from the route. It suits a text that
+ * tells the next turn without a timer.
+ *
+ * @param      playerid      Player shown the route.
+ * @param      routeid       Route they follow.
+ * @param      remaining     Distance left to the end of the route, in metres.
+ * @param      turn          The next turn, or `A3D_TURN_NONE` when the end comes next.
+ * @param      turnDistance  Distance to the next turn, or to the end when none is left.
+ */
+forward A3D_OnRouteAdvanced(playerid, Route:routeid, Float:remaining, A3D_TURN:turn, Float:turnDistance);
 
 /**
  * # Calls

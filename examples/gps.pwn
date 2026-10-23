@@ -10,10 +10,10 @@
  * - Clicking the map sets the destination. In a vehicle the route drives, on foot it walks.
  * - `/gps` tells the distance and the time left, and `/gps off` hides the route.
  *
- * The route is found again when the player strays from it, or gets in or out of a vehicle.
+ * The route is found again when the player strays from it, or gets in or out of a vehicle. The new
+ * route is shown before the old one is destroyed, so the line keeps the part the two share. The next
+ * turn is written when `A3D_OnRouteAdvanced` says it changed, so no timer runs.
  */
-
-#define GPS_UPDATE 500
 
 enum E_GPS {
     Route:E_GPS_ROUTE,
@@ -24,12 +24,11 @@ enum E_GPS {
 };
 
 static
-    gGps[MAX_PLAYERS][E_GPS],
-    gTimer
+    gGps[MAX_PLAYERS][E_GPS]
 ;
 
 static const gTurnText[A3D_TURN][] = {
-    "Go on",
+    "Arrive",
     "Keep left",
     "Turn left",
     "Turn sharp left",
@@ -38,8 +37,6 @@ static const gTurnText[A3D_TURN][] = {
     "Turn sharp right",
     "Turn back"
 };
-
-forward OnGpsUpdate();
 
 static stock CreateGpsText(playerid) {
     new PlayerText:text = CreatePlayerTextDraw(playerid, 320.0, 360.0, "_");
@@ -57,6 +54,20 @@ static stock StopGps(playerid) {
     A3D_DestroyRoute(gGps[playerid][E_GPS_ROUTE]);
     gGps[playerid][E_GPS_ROUTE] = INVALID_ROUTE_ID;
     PlayerTextDrawHide(playerid, gGps[playerid][E_GPS_TEXT]);
+}
+
+static stock ShowGpsTurn(playerid, Float:remaining, A3D_TURN:turn, Float:turnDistance) {
+    new
+        text[96]
+    ;
+
+    if (turn == A3D_TURN_NONE) {
+        format(text, sizeof (text), "Arrive in %i m", floatround(remaining));
+    } else {
+        format(text, sizeof (text), "%s in %i m~n~%.1f km to go", gTurnText[turn], floatround(turnDistance), remaining / 1000.0);
+    }
+
+    PlayerTextDrawSetString(playerid, gGps[playerid][E_GPS_TEXT], text);
 }
 
 static stock bool:FindGpsRoute(playerid) {
@@ -79,65 +90,42 @@ static stock bool:FindGpsRoute(playerid) {
         GetVehicleZAngle(vehicleid, heading);
     }
 
-    A3D_DestroyRoute(gGps[playerid][E_GPS_ROUTE]);
-    gGps[playerid][E_GPS_ROUTE] = A3D_FindRoute(x, y, z, gGps[playerid][E_GPS_X], gGps[playerid][E_GPS_Y], gGps[playerid][E_GPS_Z], type, heading);
+    new Route:routeid = A3D_FindRoute(x, y, z, gGps[playerid][E_GPS_X], gGps[playerid][E_GPS_Y], gGps[playerid][E_GPS_Z], type, heading);
 
-    if (gGps[playerid][E_GPS_ROUTE] == INVALID_ROUTE_ID) {
+    if (routeid == INVALID_ROUTE_ID) {
         return false;
     }
 
-    A3D_ShowRouteForPlayer(playerid, gGps[playerid][E_GPS_ROUTE]);
+    new
+        Float:remaining,
+        A3D_TURN:turn,
+        Float:turnDistance
+    ;
+
+    A3D_ShowRouteForPlayer(playerid, routeid);
+    A3D_DestroyRoute(gGps[playerid][E_GPS_ROUTE]);
+    gGps[playerid][E_GPS_ROUTE] = routeid;
+    A3D_GetRouteProgress(routeid, x, y, z, remaining, .turn = turn, .turnDistance = turnDistance);
+    ShowGpsTurn(playerid, remaining, turn, turnDistance);
     PlayerTextDrawShow(playerid, gGps[playerid][E_GPS_TEXT]);
 
     return true;
 }
 
-static stock UpdateGps(playerid) {
-    new
-        Float:x,
-        Float:y,
-        Float:z,
-        Float:remaining,
-        Float:away,
-        next,
-        A3D_TURN:turn,
-        Float:turnDistance,
-        text[96]
-    ;
-
-    GetPlayerPos(playerid, x, y, z);
-
-    if (!A3D_GetRouteProgress(gGps[playerid][E_GPS_ROUTE], x, y, z, remaining, away, next, turn, turnDistance)) {
-        return;
-    }
-
-    if (turn == A3D_TURN_NONE) {
-        format(text, sizeof (text), "Arrive in %i m", floatround(remaining));
-    } else {
-        format(text, sizeof (text), "%s in %i m~n~%.1f km to go", gTurnText[turn], floatround(turnDistance), remaining / 1000.0);
-    }
-
-    PlayerTextDrawSetString(playerid, gGps[playerid][E_GPS_TEXT], text);
-}
-
 public OnFilterScriptInit() {
-    for (new playerid; playerid != MAX_PLAYERS; ++playerid) {
-        if (IsPlayerConnected(playerid)) {
-            CreateGpsText(playerid);
+    for (new i; i != MAX_PLAYERS; ++i) {
+        if (IsPlayerConnected(i)) {
+            CreateGpsText(i);
         }
     }
-
-    gTimer = SetTimer("OnGpsUpdate", GPS_UPDATE, true);
 
     return 1;
 }
 
 public OnFilterScriptExit() {
-    KillTimer(gTimer);
-
-    for (new playerid; playerid != MAX_PLAYERS; ++playerid) {
-        if (IsPlayerConnected(playerid)) {
-            PlayerTextDrawDestroy(playerid, gGps[playerid][E_GPS_TEXT]);
+    for (new i; i != MAX_PLAYERS; ++i) {
+        if (IsPlayerConnected(i)) {
+            PlayerTextDrawDestroy(i, gGps[i][E_GPS_TEXT]);
         }
     }
 
@@ -180,7 +168,6 @@ public OnPlayerClickMap(playerid, Float:fX, Float:fY, Float:fZ) {
 
     format(message, sizeof (message), "Route set: %.1f km, about %i minutes.", A3D_GetRouteLength(gGps[playerid][E_GPS_ROUTE]) / 1000.0, floatround(A3D_GetRouteTime(gGps[playerid][E_GPS_ROUTE]) / 60.0, floatround_ceil));
     SendClientMessage(playerid, -1, message);
-    UpdateGps(playerid);
 
     return 1;
 }
@@ -236,12 +223,14 @@ public OnPlayerCommandText(playerid, cmdtext[]) {
     return 1;
 }
 
-public OnGpsUpdate() {
-    for (new playerid; playerid != MAX_PLAYERS; ++playerid) {
-        if (gGps[playerid][E_GPS_ROUTE] != INVALID_ROUTE_ID && IsPlayerConnected(playerid)) {
-            UpdateGps(playerid);
-        }
+public A3D_OnRouteAdvanced(playerid, Route:routeid, Float:remaining, A3D_TURN:turn, Float:turnDistance) {
+    if (routeid != gGps[playerid][E_GPS_ROUTE]) {
+        return 1;
     }
+
+    ShowGpsTurn(playerid, remaining, turn, turnDistance);
+
+    return 1;
 }
 
 public A3D_OnRouteLeft(playerid, Route:routeid, Float:distance) {

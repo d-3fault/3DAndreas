@@ -15,6 +15,7 @@ constexpr float DefaultReach = 300.0f;
 constexpr float ArriveDistance = 15.0f;
 constexpr float StrayDistance = 30.0f;
 constexpr float ReturnDistance = 15.0f;
+constexpr float AdvanceStep = 10.0f;
 constexpr float Continuity = 0.05f;
 constexpr uint32_t BehindSegments = 16;
 constexpr uint32_t AheadSegments = 64;
@@ -144,23 +145,6 @@ bool walkPath(Vector3 from, Vector3 to, float reach, RouteResult& result) {
 	return true;
 }
 
-RoutePoint pointAlong(const Route& route, float distance) {
-	const std::vector<RoutePoint>& points = route.result.points;
-	auto after = std::upper_bound(route.along.begin(), route.along.end(), distance);
-	if (after == route.along.begin()) {
-		return points.front();
-	}
-	if (after == route.along.end()) {
-		return points.back();
-	}
-	size_t index = size_t(after - route.along.begin()) - 1;
-	float span = route.along[index + 1] - route.along[index];
-	float t = span > 0.0f ? (distance - route.along[index]) / span : 0.0f;
-	const RoutePoint& a = points[index];
-	const RoutePoint& b = points[index + 1];
-	return { a.x + (b.x - a.x) * t, a.y + (b.y - a.y) * t, a.z + (b.z - a.z) * t };
-}
-
 Progress follow(const Route& route, Vector3 at, float previous, uint32_t hint) {
 	const std::vector<RoutePoint>& points = route.result.points;
 	Progress progress;
@@ -214,10 +198,11 @@ void nextTurn(const Route& route, float position, Turn& turn, float& distance) {
 	}
 }
 
-void sendShow(IPlayer& player, int clientid, const RoutePoint& centre, float size, uint32_t colour) {
+void sendShow(IPlayer& player, const LineSquare& square, uint32_t colour) {
 	uint8_t data[22];
-	int16_t id = int16_t(clientid);
-	float corners[4] = { centre.x - size * 0.5f, centre.y - size * 0.5f, centre.x + size * 0.5f, centre.y + size * 0.5f };
+	int16_t id = int16_t(square.clientid);
+	float half = square.size * 0.5f;
+	float corners[4] = { square.x - half, square.y - half, square.x + half, square.y + half };
 	std::memcpy(data, &id, sizeof id);
 	std::memcpy(data + 2, corners, sizeof corners);
 	std::memcpy(data + 18, &colour, sizeof colour);
@@ -233,7 +218,7 @@ void sendHide(IPlayer& player, int clientid) {
 
 void hideSquares(IPlayer* player, RouteDisplay& display) {
 	IPlayerGangZoneData* data = player != nullptr ? queryExtension<IPlayerGangZoneData>(*player) : nullptr;
-	for (const RouteSquare& square : display.shown) {
+	for (const LineSquare& square : display.shown) {
 		if (data != nullptr) {
 			sendHide(*player, square.clientid);
 			data->releaseClientID(square.clientid);
@@ -244,61 +229,28 @@ void hideSquares(IPlayer* player, RouteDisplay& display) {
 
 void draw(IPlayer& player, RouteDisplay& display, const Route& route) {
 	IPlayerGangZoneData* data = queryExtension<IPlayerGangZoneData>(player);
-	if (data == nullptr || route.along.empty()) {
+	if (data == nullptr) {
 		return;
 	}
-	float length = route.along.back();
-	float step = display.width;
-	int64_t first = int64_t(std::floor(display.position / step));
-	int64_t last = std::min(first + display.squares / 2, int64_t(std::floor(length / step)));
-	std::vector<RouteSquare> wanted;
-	for (int64_t key = first; key <= last; ++key) {
-		wanted.push_back({ key, -1, step });
-	}
-	int left = display.squares - int(wanted.size());
-	float rest = length - float(last) * step;
-	if (left > 0 && rest > step) {
-		int64_t stride = 2;
-		while (float(stride) * step * float(left) < rest) {
-			stride *= 2;
-		}
-		for (int64_t key = (last / stride + 1) * stride; float(key) * step <= length && left > 0; key += stride, --left) {
-			wanted.push_back({ key, -1, std::max(step, float(stride) * step * 0.5f) });
-		}
-	}
-	std::vector<RouteSquare> kept;
-	size_t at = 0;
-	for (const RouteSquare& square : display.shown) {
-		while (at != wanted.size() && wanted[at].key < square.key) {
-			++at;
-		}
-		if (at != wanted.size() && wanted[at].key == square.key && wanted[at].size == square.size) {
-			kept.push_back(square);
-			continue;
-		}
+	std::vector<LineSquare> wanted;
+	planLine(route.result.points, route.along, display.position, display.width, display.squares, wanted);
+	LineChange change = compareLine(display.shown, wanted);
+	for (const LineSquare& square : change.hidden) {
 		sendHide(player, square.clientid);
 		data->releaseClientID(square.clientid);
 	}
-	std::vector<RouteSquare> shown;
-	shown.reserve(wanted.size());
-	size_t keep = 0;
-	for (RouteSquare& square : wanted) {
-		while (keep != kept.size() && kept[keep].key < square.key) {
-			++keep;
-		}
-		if (keep != kept.size() && kept[keep].key == square.key) {
-			shown.push_back(kept[keep]);
-			continue;
-		}
+	std::vector<LineSquare> shown = std::move(change.kept);
+	for (LineSquare& square : change.added) {
 		int clientid = data->reserveClientID();
 		if (clientid == INVALID_GANG_ZONE_ID) {
 			break;
 		}
 		data->setClientID(clientid, RouteSquareZone);
 		square.clientid = clientid;
-		sendShow(player, clientid, pointAlong(route, float(square.key) * step), square.size, display.colour);
+		sendShow(player, square, display.colour);
 		shown.push_back(square);
 	}
+	std::sort(shown.begin(), shown.end(), lineBefore);
 	display.shown = std::move(shown);
 }
 
@@ -569,15 +521,24 @@ cell AMX_NATIVE_CALL A3D_ShowRouteForPlayer(AMX* amx, const cell* params) {
 	if (playerid >= int(s.routeDisplays.size())) {
 		s.routeDisplays.resize(size_t(playerid) + 1);
 	}
-	hideDisplay(playerid);
 	RouteDisplay& display = s.routeDisplays[size_t(playerid)];
+	uint32_t colour = Colour::FromRGBA(uint32_t(params[3])).ABGR();
+	std::vector<LineSquare> shown;
+	if (display.route >= 0 && display.colour == colour && display.width == width) {
+		shown = std::move(display.shown);
+	} else {
+		hideDisplay(playerid);
+	}
+	display = RouteDisplay();
+	display.shown = std::move(shown);
 	display.route = params[2];
-	display.colour = Colour::FromRGBA(uint32_t(params[3])).ABGR();
+	display.colour = colour;
 	display.width = width;
 	display.squares = std::min(int(params[5]), MaxSquares);
 	Progress progress = follow(*route, player->getPosition(), 0.0f, 0);
 	display.position = progress.position;
 	display.segment = progress.segment;
+	display.closest = progress.away;
 	draw(*player, display, *route);
 	return true;
 }
@@ -661,7 +622,8 @@ void updateRoutes() {
 	State& s = state();
 	if (!s.routesAnnounced && s.roadNetwork.ready() && s.walkNetwork.ready() && s.walkMesh.ready()) {
 		s.routesAnnounced = true;
-		double seconds = std::chrono::duration<double>(std::chrono::steady_clock::now() - s.routesStarted).count();
+		std::chrono::steady_clock::time_point readyAt = std::max({ s.roadNetwork.readyAt(), s.walkNetwork.readyAt(), s.walkMesh.readyAt() });
+		double seconds = std::chrono::duration<double>(readyAt - s.routesStarted).count();
 		if (s.walkMesh.loaded()) {
 			s.core->printLn("3DAndreas " A3D_VERSION ": routes on %u road and %u path junctions, and %u tiles of navigation mesh in %.1f MB, ready in %.1f s", unsigned(s.roadNetwork.junctionCount()), unsigned(s.walkNetwork.junctionCount()), unsigned(s.walkMesh.tileCount()), double(s.walkMesh.byteCount()) / 1048576.0, seconds);
 		} else {
@@ -690,7 +652,15 @@ void updateRoutes() {
 		draw(*player, display, *route);
 		auto found = s.scripts.find(route->owner);
 		Script* script = found == s.scripts.end() ? nullptr : &found->second;
-		float remaining = route->along.back() - progress.position;
+		float remaining = std::max(route->along.back() - progress.position, 0.0f);
+		Turn turn;
+		float turnDistance;
+		nextTurn(*route, progress.position, turn, turnDistance);
+		int step = int(turnDistance / AdvanceStep);
+		bool advanced = cell(turn) != display.turn || step != display.step;
+		display.turn = int(turn);
+		display.step = step;
+		display.closest = std::min(display.closest, progress.away);
 		if (!display.arrived && remaining <= ArriveDistance && progress.away <= StrayDistance) {
 			display.arrived = true;
 			if (script != nullptr) {
@@ -698,13 +668,18 @@ void updateRoutes() {
 			}
 			continue;
 		}
-		if (!display.strayed && progress.away > StrayDistance) {
+		if (!display.strayed && progress.away > display.closest + StrayDistance) {
 			display.strayed = true;
 			if (script != nullptr) {
 				callPublic(*script, "A3D_OnRouteLeft", { cell(playerid), cell(routeid), amx_ftoc(progress.away) });
 			}
-		} else if (display.strayed && progress.away < ReturnDistance) {
+			continue;
+		}
+		if (display.strayed && progress.away < display.closest + ReturnDistance) {
 			display.strayed = false;
+		}
+		if (advanced && !display.strayed && script != nullptr) {
+			callPublic(*script, "A3D_OnRouteAdvanced", { cell(playerid), cell(routeid), amx_ftoc(remaining), cell(turn), amx_ftoc(turnDistance) });
 		}
 	}
 }

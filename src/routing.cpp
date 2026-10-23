@@ -228,6 +228,7 @@ void RouteNetwork::clear() {
 	}
 	stopping_.store(false);
 	built_.store(false);
+	readyAt_.store(0);
 	started_ = false;
 	for (Hierarchy& found : hierarchies_) {
 		found.used = false;
@@ -291,6 +292,7 @@ void RouteNetwork::launch(std::function<PathGraph()> make, bool vehicles) {
 		backwardParent_.assign(states, None);
 		backwardStamp_.assign(states, 0);
 		stamp_ = 0;
+		readyAt_.store(std::chrono::steady_clock::now().time_since_epoch().count(), std::memory_order_relaxed);
 		{
 			std::lock_guard<std::mutex> lock(mutex_);
 			built_.store(true, std::memory_order_release);
@@ -305,6 +307,7 @@ void RouteNetwork::launch(std::function<PathGraph()> make, bool vehicles) {
 				return;
 			}
 			found.contraction = std::move(contraction);
+			readyAt_.store(std::chrono::steady_clock::now().time_since_epoch().count(), std::memory_order_relaxed);
 			found.ready.store(true, std::memory_order_release);
 		}
 	});
@@ -334,6 +337,10 @@ bool RouteNetwork::ready() const {
 		}
 	}
 	return true;
+}
+
+std::chrono::steady_clock::time_point RouteNetwork::readyAt() const {
+	return std::chrono::steady_clock::time_point(std::chrono::steady_clock::duration(readyAt_.load(std::memory_order_relaxed)));
 }
 
 void RouteNetwork::wait() {

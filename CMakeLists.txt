@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.19)
-project(3DAndreas VERSION 0.7.0 LANGUAGES C CXX)
+project(3DAndreas VERSION 0.7.1 LANGUAGES C CXX)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -74,6 +74,7 @@ add_library(3DAndreas SHARED
 	src/navfile.cpp
 	src/probes.cpp
 	src/queries.cpp
+	src/routeline.cpp
 	src/routes.cpp
 	src/routing.cpp
 	src/screen.cpp
@@ -126,6 +127,17 @@ if(WIN32)
 endif()
 if(MSVC)
 	target_compile_options(routebench PRIVATE /W3 /utf-8)
+endif()
+
+add_executable(linetest
+	tools/linetest.cpp
+	src/routeline.cpp
+)
+if(WIN32)
+	target_compile_definitions(linetest PRIVATE NOMINMAX _CRT_SECURE_NO_WARNINGS)
+endif()
+if(MSVC)
+	target_compile_options(linetest PRIVATE /W3 /utf-8)
 endif()
 
 add_executable(navbuild
