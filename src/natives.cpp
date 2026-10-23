@@ -19,6 +19,10 @@ cell optional(const cell* params, int index, cell fallback) {
 	return params[0] >= cell(index * sizeof(cell)) ? params[index] : fallback;
 }
 
+float optionalFloat(const cell* params, int index, float fallback) {
+	return params[0] >= cell(index * sizeof(cell)) ? readFloat(params, index) : fallback;
+}
+
 Vector3 readVector(const cell* params, int index) {
 	return Vector3(amx_ctof(params[index]), amx_ctof(params[index + 1]), amx_ctof(params[index + 2]));
 }
@@ -504,6 +508,8 @@ void registerNatives(IPawnScript& script) {
 	registerGeometryNatives(script);
 	registerProbeNatives(script);
 	registerScreenNatives(script);
+	registerRouteNatives(script);
+	registerWalkNatives(script);
 }
 
 }

@@ -9,6 +9,7 @@ namespace {
 constexpr int ExtraBodies = 20000;
 const char* const OwnDatabase = "scriptfiles/3dandreas/world.db";
 const char* const OwnModels = "scriptfiles/3dandreas/models.json";
+const char* const OwnNavmesh = "scriptfiles/3dandreas/navmesh.db";
 const char* const ColAndreasDatabase = "scriptfiles/colandreas/ColAndreas.cadb";
 
 float readNumber(IConfig& config, const char* key, float fallback) {
@@ -51,6 +52,9 @@ public:
 		if (defaults || config.getType("3dandreas.models") == ConfigOptionType_None) {
 			config.setString("3dandreas.models", OwnModels);
 		}
+		if (defaults || config.getType("3dandreas.navmesh") == ConfigOptionType_None) {
+			config.setString("3dandreas.navmesh", OwnNavmesh);
+		}
 		if (defaults || config.getType("3dandreas.threads") == ConfigOptionType_None) {
 			config.setInt("3dandreas.threads", 2);
 		}
@@ -82,6 +86,10 @@ public:
 		if (!models.empty()) {
 			s.settings.models = std::string(models.data(), models.size());
 		}
+		StringView navmesh = config.getString("3dandreas.navmesh");
+		if (!navmesh.empty()) {
+			s.settings.navmesh = std::string(navmesh.data(), navmesh.size());
+		}
 		int* threads = config.getInt("3dandreas.threads");
 		if (threads != nullptr) {
 			s.settings.threads = *threads;
@@ -105,6 +113,7 @@ public:
 			loaded = true;
 		}
 		double read = since(start);
+		s.walkMesh.load(s.settings.navmesh);
 		start = std::chrono::steady_clock::now();
 		int described = loadModelSettings(s.settings.models);
 		double settings = since(start);
@@ -153,6 +162,7 @@ public:
 	void onAmxUnload(IPawnScript& script) override {
 		State& s = state();
 		forgetScript(script.GetAMX());
+		forgetRoutes(script.GetAMX());
 		s.scripts.erase(script.GetAMX());
 	}
 
@@ -161,10 +171,12 @@ public:
 		if (s.system != nullptr) {
 			step(double(elapsed.count()) / 1000000.0);
 		}
+		updateRoutes();
 	}
 
 	void onPlayerDisconnect(IPlayer& player, PeerDisconnectReason reason) override {
 		removePlayer(player.getID());
+		removeRoutePlayer(player.getID());
 	}
 
 	void onPoolEntryDestroyed(IVehicle& vehicle) override {
@@ -224,6 +236,7 @@ public:
 		for (int playerid = 0; playerid != int(s.playerBodies.size()); ++playerid) {
 			removePlayer(playerid);
 		}
+		stopRoutes();
 		stopWorld();
 		delete this;
 	}

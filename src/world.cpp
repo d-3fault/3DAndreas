@@ -473,6 +473,7 @@ bool loadDatabase(const std::string& path) {
 	s.surfaces = std::move(database.surfaces);
 	s.waters = std::move(database.waters);
 	indexWater();
+	loadRoutes(std::move(database.roads), std::move(database.walks));
 	return true;
 }
 

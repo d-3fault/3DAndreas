@@ -41,6 +41,21 @@
  * stop at the surface as `A3D_HIT_WATER`, with no surface of the game. `A3D_COLLIDE_ALL` holds every
  * kind of body, not the water, and bodies never collide with the water, they float with
  * `A3D_SetBuoyancy`.
+ *
+ * Routes follow the paths of the game in the database: the roads vehicles drive, with their one way
+ * streets and the lanes for boats, and the paths pedestrians walk, joined to the roads where they
+ * end. A route is found in microseconds by a contraction hierarchy built when the server starts.
+ * Until it is ready, which takes about a second, routes are found the slow way and come out the
+ * same. Routes for vehicles cost a few seconds at each turn, more to the left than to the right,
+ * and half a minute to turn back. A route can be shown on the radar and the map of a player as a
+ * line that moves on as they go.
+ *
+ * `scriptfiles/3dandreas/navmesh.db`, which the `navbuild` tool makes from the database, tells where
+ * a pedestrian can walk anywhere on the map and in the interiors, around buildings, walls and
+ * fences. With it, walks start and end where the points are rather than on the nearest path, short
+ * walks take the shortest way across squares and yards, and `A3D_GetNearestWalkPoint`,
+ * `A3D_GetRandomWalkPoint` and `A3D_WalkRayCast` answer. Without it, they fail and walks keep to the
+ * paths. The mesh takes about 65 megabytes of memory, and the routes about 30.
  */
 
 /**
@@ -120,6 +135,28 @@ enum A3D_PART {
     A3D_PART_REAR_RIGHT_WHEEL,
     A3D_PART_MIDDLE_LEFT_WHEEL,
     A3D_PART_MIDDLE_RIGHT_WHEEL
+};
+
+#define INVALID_ROUTE_ID                (Route:-1)
+
+enum A3D_ROUTE {
+    A3D_ROUTE_FASTEST,
+    A3D_ROUTE_SHORTEST,
+    A3D_ROUTE_ANY_WAY,
+    A3D_ROUTE_TRAFFIC,
+    A3D_ROUTE_BOAT,
+    A3D_ROUTE_WALK
+};
+
+enum A3D_TURN {
+    A3D_TURN_NONE,
+    A3D_TURN_SLIGHT_LEFT,
+    A3D_TURN_LEFT,
+    A3D_TURN_SHARP_LEFT,
+    A3D_TURN_SLIGHT_RIGHT,
+    A3D_TURN_RIGHT,
+    A3D_TURN_SHARP_RIGHT,
+    A3D_TURN_BACK
 };
 
 /**
@@ -1566,6 +1603,333 @@ native bool:A3D_GetVehiclePositionOffset(vehicleid, Float:x, Float:y, Float:z, &
 native bool:A3D_GetVehiclePartPosition(vehicleid, A3D_PART:part, &Float:x, &Float:y, &Float:z);
 
 /**
+ * @brief      Find the best route between two points along the paths of the game.
+ *
+ * Each end goes to the nearest point of a path the route can use, within `reach`. Height counts
+ * twice, so a road on a bridge overhead is farther than a road beside. When the nearest paths do
+ * not connect, the ends go to the nearest paths of the main network instead. The route keeps its
+ * points and its turns until `A3D_DestroyRoute`, or until the script unloads.
+ *
+ * `A3D_ROUTE_FASTEST` takes the least time and `A3D_ROUTE_SHORTEST` the least distance.
+ * `A3D_ROUTE_ANY_WAY` takes the least time driving one way streets both ways, as the emergency
+ * services do. `A3D_ROUTE_TRAFFIC` keeps to the roads the traffic of the game drives, which leaves
+ * out dirt roads, tracks and alleys. `A3D_ROUTE_BOAT` keeps to the lanes for boats, and
+ * `A3D_ROUTE_WALK` to the paths of pedestrians, or the roads where there are none. With the
+ * navigation mesh, a walk shorter than 500 metres goes the shortest way on the mesh, and a longer
+ * one walks on the mesh from its start to the paths and from the paths to its end.
+ *
+ * @param      fromX    Start on the X axis.
+ * @param      fromY    Start on the Y axis.
+ * @param      fromZ    Start on the Z axis.
+ * @param      toX      End on the X axis.
+ * @param      toY      End on the Y axis.
+ * @param      toZ      End on the Z axis.
+ * @param      type     How the route weighs the paths.
+ * @param      heading  Direction the vehicle faces at the start, as `GetVehicleZAngle` gives it, or
+ *                      `-1.0` for none. Starting against it costs a turn back.
+ * @param      reach    How far from each end to look for a path, in metres.
+ *
+ * @return     - the route
+ *             - `INVALID_ROUTE_ID` no path is within reach, or the ends are not connected
+ */
+native Route:A3D_FindRoute(Float:fromX, Float:fromY, Float:fromZ, Float:toX, Float:toY, Float:toZ, A3D_ROUTE:type = A3D_ROUTE_FASTEST, Float:heading = -1.0, Float:reach = 300.0);
+
+/**
+ * @brief      Destroy a route, and hide it from the players it is shown to.
+ *
+ * @param      routeid  Route to destroy.
+ *
+ * @return     - `true` the route was destroyed
+ *             - `false` the route does not exist
+ */
+native bool:A3D_DestroyRoute(Route:routeid);
+
+/**
+ * @brief      Whether a route exists.
+ *
+ * @param      routeid  Route to check.
+ */
+native bool:A3D_IsValidRoute(Route:routeid);
+
+/**
+ * @brief      Length of a route, in metres.
+ *
+ * @param      routeid  Route to measure.
+ *
+ * @return     - the length
+ *             - `0.0` the route does not exist
+ */
+native Float:A3D_GetRouteLength(Route:routeid);
+
+/**
+ * @brief      Time a route takes, in seconds.
+ *
+ * Vehicles drive at 36 metres a second on highways, 22 on other roads and 14 on the roads the
+ * traffic leaves alone, and lose the time the turns cost. Boats sail at 15 metres a second and
+ * pedestrians run at 5.
+ *
+ * @param      routeid  Route to measure.
+ *
+ * @return     - the time
+ *             - `0.0` the route does not exist
+ */
+native Float:A3D_GetRouteTime(Route:routeid);
+
+/**
+ * @brief      Number of points of a route, from its start to its end.
+ *
+ * @param      routeid  Route to read.
+ *
+ * @return     - the number of points
+ *             - `0` the route does not exist
+ */
+native A3D_GetRoutePointCount(Route:routeid);
+
+/**
+ * @brief      Read a point of a route.
+ *
+ * @param      routeid  Route to read.
+ * @param      index    Index of the point, from `0`.
+ * @param      x        Point on the X axis.
+ * @param      y        Point on the Y axis.
+ * @param      z        Point on the Z axis.
+ *
+ * @return     - `true` the point was read
+ *             - `false` the route or the point does not exist
+ */
+native bool:A3D_GetRoutePoint(Route:routeid, index, &Float:x, &Float:y, &Float:z);
+
+/**
+ * @brief      Copy points of a route into three arrays.
+ *
+ * @param      routeid  Route to read.
+ * @param      x        Points on the X axis.
+ * @param      y        Points on the Y axis.
+ * @param      z        Points on the Z axis.
+ * @param      start    Index of the first point to copy.
+ * @param      size     Room in each array.
+ *
+ * @return     - the number of points copied
+ */
+native A3D_GetRoutePoints(Route:routeid, Float:x[], Float:y[], Float:z[], start = 0, size = sizeof (x));
+
+/**
+ * @brief      Number of turns of a route.
+ *
+ * @param      routeid  Route to read.
+ *
+ * @return     - the number of turns
+ *             - `0` the route does not exist
+ */
+native A3D_GetRouteTurnCount(Route:routeid);
+
+/**
+ * @brief      Read a turn of a route, at a junction where more than two ways meet.
+ *
+ * Turns a few metres apart count as one, so crossing a divided road is a single turn. A route that
+ * starts against `heading` begins with `A3D_TURN_BACK` at its first point.
+ *
+ * @param      routeid   Route to read.
+ * @param      index     Index of the turn, from `0`.
+ * @param      x         Junction on the X axis.
+ * @param      y         Junction on the Y axis.
+ * @param      z         Junction on the Z axis.
+ * @param      distance  Distance from the start of the route to the junction, in metres.
+ *
+ * @return     - the turn
+ *             - `A3D_TURN_NONE` the route or the turn does not exist
+ */
+native A3D_TURN:A3D_GetRouteTurn(Route:routeid, index, &Float:x, &Float:y, &Float:z, &Float:distance = 0.0);
+
+/**
+ * @brief      Find where a point is along a route: the distance left, the distance from the route
+ *             and the next turn.
+ *
+ * The point goes to the nearest part of the route, and where the route passes a place twice, to the
+ * part nearer where the last call put it. A distance from the route that keeps growing means the
+ * player took another way, and a new route from where they are brings them back.
+ *
+ * @param      routeid       Route to follow.
+ * @param      x             Point on the X axis.
+ * @param      y             Point on the Y axis.
+ * @param      z             Point on the Z axis.
+ * @param      remaining     Distance left to the end of the route, in metres.
+ * @param      away          Distance from the point to the route.
+ * @param      next          Index of the next point of the route.
+ * @param      turn          The next turn, or `A3D_TURN_NONE` when none is left.
+ * @param      turnDistance  Distance to the next turn, or to the end when none is left.
+ *
+ * @return     - `true` the route exists
+ *             - `false` it does not
+ */
+native bool:A3D_GetRouteProgress(Route:routeid, Float:x, Float:y, Float:z, &Float:remaining, &Float:away = 0.0, &next = 0, &A3D_TURN:turn = A3D_TURN_NONE, &Float:turnDistance = 0.0);
+
+/**
+ * @brief      Measure the best route between two points without keeping it, which is faster than
+ *             finding it.
+ *
+ * @param      fromX    Start on the X axis.
+ * @param      fromY    Start on the Y axis.
+ * @param      fromZ    Start on the Z axis.
+ * @param      toX      End on the X axis.
+ * @param      toY      End on the Y axis.
+ * @param      toZ      End on the Z axis.
+ * @param      length   Length of the route, in metres.
+ * @param      time     Time the route takes, in seconds.
+ * @param      type     How the route weighs the paths.
+ * @param      heading  Direction the vehicle faces at the start, or `-1.0` for none.
+ * @param      reach    How far from each end to look for a path, in metres.
+ *
+ * @return     - `true` a route was found
+ *             - `false` no path is within reach, or the ends are not connected
+ */
+native bool:A3D_MeasureRoute(Float:fromX, Float:fromY, Float:fromZ, Float:toX, Float:toY, Float:toZ, &Float:length, &Float:time, A3D_ROUTE:type = A3D_ROUTE_FASTEST, Float:heading = -1.0, Float:reach = 300.0);
+
+/**
+ * @brief      Find which of several points the best route from a point reaches first, such as the
+ *             nearest hospital by road rather than in a straight line.
+ *
+ * Every point is weighed in one search, which takes about as long as a few routes.
+ *
+ * @param      x        Start on the X axis.
+ * @param      y        Start on the Y axis.
+ * @param      z        Start on the Z axis.
+ * @param      targetX  Points on the X axis.
+ * @param      targetY  Points on the Y axis.
+ * @param      targetZ  Points on the Z axis.
+ * @param      count    Number of points.
+ * @param      type     How the routes weigh the paths.
+ * @param      heading  Direction the vehicle faces at the start, or `-1.0` for none.
+ * @param      reach    How far from each point to look for a path, in metres.
+ *
+ * @return     - the index of the point reached first
+ *             - `-1` none can be reached
+ */
+native A3D_FindNearestByRoute(Float:x, Float:y, Float:z, const Float:targetX[], const Float:targetY[], const Float:targetZ[], count = sizeof (targetX), A3D_ROUTE:type = A3D_ROUTE_FASTEST, Float:heading = -1.0, Float:reach = 300.0);
+
+/**
+ * @brief      Find the nearest point of a path a route can use, and the direction of the path there.
+ *
+ * On a one way street the angle points the way the traffic goes, which places a vehicle on the road
+ * facing the right way.
+ *
+ * @param      x        Point on the X axis.
+ * @param      y        Point on the Y axis.
+ * @param      z        Point on the Z axis.
+ * @param      pathX    Point of the path on the X axis.
+ * @param      pathY    Point of the path on the Y axis.
+ * @param      pathZ    Point of the path on the Z axis.
+ * @param      angle    Direction of the path, as `SetVehicleZAngle` takes it.
+ * @param      type     Which paths count.
+ * @param      reach    How far to look, in metres.
+ *
+ * @return     - `true` a path is within reach
+ *             - `false` none is
+ */
+native bool:A3D_GetNearestPathPoint(Float:x, Float:y, Float:z, &Float:pathX, &Float:pathY, &Float:pathZ, &Float:angle = 0.0, A3D_ROUTE:type = A3D_ROUTE_FASTEST, Float:reach = 100.0);
+
+/**
+ * @brief      Show a route on the radar and the map of a player as a line, which moves on as they go.
+ *
+ * The line is made of gang zones sent straight to the client of the player. They are not gang zones
+ * of the server, so they take no memory or id there, only room among the 1024 gang zones the client
+ * shows. Half of them draw the route ahead of the player without a gap, and the rest mark the way
+ * beyond as dots. A player is shown one route at a time.
+ * `A3D_OnRouteArrived` and `A3D_OnRouteLeft` tell the script that found the route when the player
+ * reaches its end or strays from it.
+ *
+ * @param      playerid  Player to show the route to.
+ * @param      routeid   Route to show.
+ * @param      colour    Colour of the line, as `0xRRGGBBAA`.
+ * @param      width     Width of the line, in metres.
+ * @param      squares   Most gang zones the line may use, up to `512`.
+ *
+ * @return     - `true` the route is shown
+ *             - `false` the player or the route does not exist
+ */
+native bool:A3D_ShowRouteForPlayer(playerid, Route:routeid, colour = 0x9966FFFF, Float:width = 8.0, squares = 128);
+
+/**
+ * @brief      Hide the route shown to a player.
+ *
+ * @param      playerid  Player to hide it from.
+ *
+ * @return     - `true` the route was hidden
+ *             - `false` no route is shown to the player
+ */
+native bool:A3D_HideRouteForPlayer(playerid);
+
+/**
+ * @brief      The route shown to a player.
+ *
+ * @param      playerid  Player to check.
+ *
+ * @return     - the route
+ *             - `INVALID_ROUTE_ID` no route is shown to the player
+ */
+native Route:A3D_GetPlayerRoute(playerid);
+
+/**
+ * @brief      Whether the navigation mesh was read. A call made while the server starts waits for it.
+ */
+native bool:A3D_IsWalkMeshLoaded();
+
+/**
+ * @brief      Find the nearest point of the navigation mesh, where a pedestrian can stand.
+ *
+ * @param      x      Point on the X axis.
+ * @param      y      Point on the Y axis.
+ * @param      z      Point on the Z axis.
+ * @param      walkX  Point of the mesh on the X axis.
+ * @param      walkY  Point of the mesh on the Y axis.
+ * @param      walkZ  Point of the mesh on the Z axis.
+ * @param      reach  How far to look across, in metres. Twice as far is looked up and down.
+ *
+ * @return     - `true` the mesh is within reach
+ *             - `false` it is not, or there is no navigation mesh
+ */
+native bool:A3D_GetNearestWalkPoint(Float:x, Float:y, Float:z, &Float:walkX, &Float:walkY, &Float:walkZ, Float:reach = 3.0);
+
+/**
+ * @brief      Find a random point of the navigation mesh within a radius, which can be walked to from
+ *             the centre, such as where an actor wanders next.
+ *
+ * @param      x       Centre on the X axis.
+ * @param      y       Centre on the Y axis.
+ * @param      z       Centre on the Z axis.
+ * @param      radius  Distance from the centre, in metres.
+ * @param      walkX   Point found on the X axis.
+ * @param      walkY   Point found on the Y axis.
+ * @param      walkZ   Point found on the Z axis.
+ *
+ * @return     - `true` a point was found
+ *             - `false` the centre is off the mesh, or there is no navigation mesh
+ */
+native bool:A3D_GetRandomWalkPoint(Float:x, Float:y, Float:z, Float:radius, &Float:walkX, &Float:walkY, &Float:walkZ);
+
+/**
+ * @brief      Find where a straight walk between two points is stopped by a wall, a building, a
+ *             ledge or the water.
+ *
+ * The walk follows the ground, up and down slopes and stairs. A start off the mesh stops it where it
+ * starts.
+ *
+ * @param      fromX  Start on the X axis.
+ * @param      fromY  Start on the Y axis.
+ * @param      fromZ  Start on the Z axis.
+ * @param      toX    End on the X axis.
+ * @param      toY    End on the Y axis.
+ * @param      toZ    End on the Z axis.
+ * @param      x      Where the walk stops on the X axis.
+ * @param      y      Where the walk stops on the Y axis.
+ * @param      z      Where the walk stops on the Z axis.
+ *
+ * @return     - `true` the walk is stopped
+ *             - `false` the way is clear
+ */
+native bool:A3D_WalkRayCast(Float:fromX, Float:fromY, Float:fromZ, Float:toX, Float:toY, Float:toZ, &Float:x = 0.0, &Float:y = 0.0, &Float:z = 0.0);
+
+/**
  * @brief      Create four walls around a rectangle on the ground.
  *
  * @param      minX     West edge.
@@ -1657,6 +2021,25 @@ forward A3D_OnEntered(Physic:zoneid, Physic:physicid);
  * @param      physicid  Physics object that left.
  */
 forward A3D_OnLeft(Physic:zoneid, Physic:physicid);
+
+/**
+ * @brief      A player reached the end of the route shown to them. The route stays on the map until it
+ *             is hidden or destroyed.
+ *
+ * @param      playerid  Player who arrived.
+ * @param      routeid   Route they followed.
+ */
+forward A3D_OnRouteArrived(playerid, Route:routeid);
+
+/**
+ * @brief      A player strayed more than 30 metres from the route shown to them. It is not called
+ *             again until they come back within 15 metres.
+ *
+ * @param      playerid  Player who strayed.
+ * @param      routeid   Route they left.
+ * @param      distance  Distance from the player to the route.
+ */
+forward A3D_OnRouteLeft(playerid, Route:routeid, Float:distance);
 
 /**
  * # Calls

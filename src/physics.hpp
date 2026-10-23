@@ -7,6 +7,7 @@
 #include <Jolt/Physics/PhysicsSystem.h>
 
 #include <array>
+#include <chrono>
 #include <cstdint>
 #include <memory>
 #include <mutex>
@@ -24,6 +25,8 @@
 #include <Server/Components/Vehicles/vehicles.hpp>
 
 #include "database.hpp"
+#include "routing.hpp"
+#include "walkmesh.hpp"
 
 namespace physics {
 
@@ -230,9 +233,52 @@ struct ModelSettings {
 	std::optional<float> syncError;
 };
 
+/**
+ * @brief      A route a script found, with the distance along it at each of its points, and where
+ *             along it `A3D_GetRouteProgress` last placed someone and on which segment.
+ */
+struct Route {
+	bool used = false;
+	AMX* owner = nullptr;
+	RouteType type = RouteType::Fastest;
+	RouteResult result;
+	std::vector<float> along;
+	float position = 0.0f;
+	uint32_t segment = 0;
+};
+
+/**
+ * @brief      A gang zone of the line of a route on the map of a player: where along the route it
+ *             stands, in steps of the width of the line, the client id it was given and its size.
+ */
+struct RouteSquare {
+	int64_t key = 0;
+	int clientid = -1;
+	float size = 0.0f;
+};
+
+/**
+ * @brief      A route shown on the map of a player as a line of gang zones that moves on as the player
+ *             goes. `colour` is ready to send, `position` is how far along the route the player is and
+ *             `segment` the segment they are on, and `strayed` and `arrived` keep each event from
+ *             repeating.
+ */
+struct RouteDisplay {
+	int route = -1;
+	uint32_t colour = 0;
+	float width = 0.0f;
+	int squares = 0;
+	float position = 0.0f;
+	uint32_t segment = 0;
+	std::vector<RouteSquare> shown;
+	bool strayed = false;
+	bool arrived = false;
+};
+
 struct Settings {
 	std::string database = "scriptfiles/3dandreas/world.db";
 	std::string models = "scriptfiles/3dandreas/models.json";
+	std::string navmesh = "scriptfiles/3dandreas/navmesh.db";
 	int threads = 2;
 	float rate = 60.0f;
 	float syncError = 0.1f;
@@ -300,6 +346,15 @@ struct State {
 	std::vector<Vector3> actorPositions;
 	std::vector<uint8_t> actorMoving;
 	std::unordered_map<AMX*, Script> scripts;
+	RouteNetwork roadNetwork;
+	RouteNetwork walkNetwork;
+	WalkMesh walkMesh;
+	std::vector<Route> routes;
+	std::vector<int> freeRoutes;
+	std::vector<RouteDisplay> routeDisplays;
+	std::chrono::steady_clock::time_point routesStarted;
+	double routesUpdatedAt = 0.0;
+	bool routesAnnounced = true;
 	std::mutex eventLock;
 	std::vector<Collision> collisions;
 	std::vector<Stop> stops;
@@ -735,6 +790,42 @@ void registerProbeNatives(IPawnScript& script);
  */
 void registerScreenNatives(IPawnScript& script);
 
+/**
+ * @brief      Start building the route networks of the paths of the database, on threads of their own.
+ */
+void loadRoutes(PathGraph roads, PathGraph walks);
+
+/**
+ * @brief      Stop building the route networks and reading the navigation mesh, and forget them.
+ */
+void stopRoutes();
+
+/**
+ * @brief      Destroy every route a script found, and hide them from the players they were shown to.
+ */
+void forgetRoutes(AMX* amx);
+
+/**
+ * @brief      Forget the route shown to a player who left.
+ */
+void removeRoutePlayer(int playerid);
+
+/**
+ * @brief      Tell when the route networks are ready, and follow the players who are shown a route:
+ *             move its line on ahead of them, and call `A3D_OnRouteArrived` and `A3D_OnRouteLeft`.
+ */
+void updateRoutes();
+
+/**
+ * @brief      Register the natives that find routes on the paths of the game and show them to players.
+ */
+void registerRouteNatives(IPawnScript& script);
+
+/**
+ * @brief      Register the natives that ask the navigation mesh where a pedestrian can walk.
+ */
+void registerWalkNatives(IPawnScript& script);
+
 float readFloat(const cell* params, int index);
 
 /**
@@ -742,6 +833,11 @@ float readFloat(const cell* params, int index);
  *             `fallback` when the call did not pass it.
  */
 cell optional(const cell* params, int index, cell fallback);
+
+/**
+ * @brief      A float argument a script may leave out, or `fallback` when the call did not pass it.
+ */
+float optionalFloat(const cell* params, int index, float fallback);
 Vector3 readVector(const cell* params, int index);
 
 /**

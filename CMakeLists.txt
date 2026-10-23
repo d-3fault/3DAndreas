@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.19)
-project(3DAndreas VERSION 0.6.3 LANGUAGES C CXX)
+project(3DAndreas VERSION 0.7.0 LANGUAGES C CXX)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -51,7 +51,16 @@ FetchContent_Declare(jolt
 	GIT_SHALLOW TRUE
 	SOURCE_SUBDIR Build
 )
-FetchContent_MakeAvailable(omp-sdk pawn jolt)
+set(RECASTNAVIGATION_DEMO OFF CACHE BOOL "" FORCE)
+set(RECASTNAVIGATION_TESTS OFF CACHE BOOL "" FORCE)
+set(RECASTNAVIGATION_EXAMPLES OFF CACHE BOOL "" FORCE)
+set(RECASTNAVIGATION_DT_POLYREF64 ON CACHE BOOL "" FORCE)
+FetchContent_Declare(recast
+	GIT_REPOSITORY https://github.com/recastnavigation/recastnavigation.git
+	GIT_TAG v1.6.0
+	GIT_SHALLOW TRUE
+)
+FetchContent_MakeAvailable(omp-sdk pawn jolt recast)
 
 add_library(3DAndreas SHARED
 	src/actors.cpp
@@ -62,11 +71,16 @@ add_library(3DAndreas SHARED
 	src/map.cpp
 	src/models.cpp
 	src/natives.cpp
+	src/navfile.cpp
 	src/probes.cpp
 	src/queries.cpp
+	src/routes.cpp
+	src/routing.cpp
 	src/screen.cpp
 	src/sync.cpp
 	src/vehicles.cpp
+	src/walkmesh.cpp
+	src/walks.cpp
 	src/water.cpp
 	src/world.cpp
 )
@@ -89,7 +103,7 @@ endif()
 if(MSVC)
 	target_compile_options(3DAndreas PRIVATE /W3 /utf-8)
 endif()
-target_link_libraries(3DAndreas PRIVATE OMP-SDK Jolt)
+target_link_libraries(3DAndreas PRIVATE OMP-SDK Jolt Detour)
 
 add_executable(phydb
 	tools/builder.cpp
@@ -101,3 +115,28 @@ endif()
 if(MSVC)
 	target_compile_options(phydb PRIVATE /W3 /utf-8)
 endif()
+
+add_executable(routebench
+	tools/routebench.cpp
+	src/database.cpp
+	src/routing.cpp
+)
+if(WIN32)
+	target_compile_definitions(routebench PRIVATE NOMINMAX _CRT_SECURE_NO_WARNINGS)
+endif()
+if(MSVC)
+	target_compile_options(routebench PRIVATE /W3 /utf-8)
+endif()
+
+add_executable(navbuild
+	tools/navbuild.cpp
+	src/database.cpp
+	src/navfile.cpp
+)
+if(WIN32)
+	target_compile_definitions(navbuild PRIVATE NOMINMAX _CRT_SECURE_NO_WARNINGS)
+endif()
+if(MSVC)
+	target_compile_options(navbuild PRIVATE /W3 /utf-8)
+endif()
+target_link_libraries(navbuild PRIVATE Recast Detour)
