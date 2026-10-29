@@ -1,3 +1,4 @@
+
 name: Build 3DAndreas for Linux
 
 on:
@@ -32,9 +33,11 @@ jobs:
 
       - name: Configure CMake
         run: |
+          rm -rf build
           cmake -S . -B build \
             -G Ninja \
-            -DCMAKE_BUILD_TYPE=Release
+            -DCMAKE_BUILD_TYPE=Release \
+            -DCMAKE_POSITION_INDEPENDENT_CODE=ON
 
       - name: Build 3DAndreas and tools
         run: |
@@ -60,6 +63,7 @@ jobs:
             exit 1
           fi
 
+          echo "Build output:"
           file dist/3DAndreas.so
 
       - name: Upload Linux build
