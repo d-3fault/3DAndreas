@@ -39,7 +39,7 @@ set(FLOATING_POINT_EXCEPTIONS_ENABLED OFF CACHE BOOL "" FORCE)
 set(ENABLE_INSTALL OFF CACHE BOOL "" FORCE)
 
 # Enable RTTI for Jolt Physics
-set(JPH_ENABLE_RTTI ON CACHE BOOL "" FORCE)
+set(CPP_RTTI_ENABLED ON CACHE BOOL "" FORCE)
 
 FetchContent_Declare(omp-sdk
     GIT_REPOSITORY https://github.com/openmultiplayer/open.mp-sdk.git
