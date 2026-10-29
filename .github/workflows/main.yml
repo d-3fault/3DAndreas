@@ -1,0 +1,71 @@
+name: Build 3DAndreas for Linux
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build-linux:
+    name: Linux x86_64
+    runs-on: ubuntu-24.04
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            build-essential \
+            cmake \
+            ninja-build \
+            git
+
+      - name: Configure CMake
+        run: |
+          cmake -S . -B build \
+            -G Ninja \
+            -DCMAKE_BUILD_TYPE=Release
+
+      - name: Build 3DAndreas and tools
+        run: |
+          cmake --build build \
+            --target 3DAndreas phydb navbuild routebench linetest \
+            --parallel 2
+
+      - name: Prepare Linux artifacts
+        run: |
+          mkdir -p dist
+
+          find build -type f \
+            \( -name '3DAndreas.so' \
+            -o -name 'phydb' \
+            -o -name 'navbuild' \
+            -o -name 'routebench' \
+            -o -name 'linetest' \) \
+            -exec cp {} dist/ \;
+
+          if [ ! -f dist/3DAndreas.so ]; then
+            echo "ERROR: 3DAndreas.so was not produced."
+            find build -type f
+            exit 1
+          fi
+
+          file dist/3DAndreas.so
+
+      - name: Upload Linux build
+        uses: actions/upload-artifact@v4
+        with:
+          name: 3DAndreas-linux-x86_64
+          path: dist/
+          if-no-files-found: error
+          retention-days: 14
